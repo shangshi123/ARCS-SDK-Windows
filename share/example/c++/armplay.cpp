@@ -17,10 +17,10 @@ using namespace arcs::common_interface;
 
 using namespace nlohmann;
 
-// 实现阻塞功能: 当机械臂运动到目标路点时，程序再往下执行
+// Implement blocking functionality: the program continues only after the robot arm reaches the target waypoint
 int waitArrival(RobotInterfacePtr impl)
 {
-    //接口调用: 获取当前的运动指令 ID
+    // API call: Get the current motion command ID
     int exec_id = impl->getMotionControl()->getExecId();
 
     int cnt = 0;
