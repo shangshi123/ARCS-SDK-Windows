@@ -10,16 +10,16 @@ using namespace arcs::aubo_sdk;
 #define M_PI 3.14159265358979323846
 #endif
 
-// 实现阻塞功能: 当机械臂运动到目标路点时，程序再往下执行
+// Implement blocking functionality: The program continues after the robot arm reaches the target waypoint
 int waitArrival(RobotInterfacePtr impl)
 {
     const int max_retry_count = 5;
     int cnt = 0;
 
-    // 接口调用: 获取当前的运动指令 ID
+    // API call: Get the current motion command ID
     int exec_id = impl->getMotionControl()->getExecId();
 
-    // 等待机械臂开始运动
+    // Wait for the robot arm to start moving
     while (exec_id == -1) {
         if (cnt++ > max_retry_count) {
             return -1;
@@ -28,7 +28,7 @@ int waitArrival(RobotInterfacePtr impl)
         exec_id = impl->getMotionControl()->getExecId();
     }
 
-    // 等待机械臂动作完成
+    // Wait for the robot arm to finish moving
     while (impl->getMotionControl()->getExecId() != -1) {
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
@@ -38,7 +38,7 @@ int waitArrival(RobotInterfacePtr impl)
 
 void exampleMovej(RpcClientPtr cli)
 {
-    // 关节角，单位: 弧度
+    // Joint angles, unit: radians
     std::vector<double> joint_angle1 = {
         0.0 * (M_PI / 180),  -15.0 * (M_PI / 180), 100.0 * (M_PI / 180),
         25.0 * (M_PI / 180), 90.0 * (M_PI / 180),  0.0 * (M_PI / 180)
@@ -54,54 +54,54 @@ void exampleMovej(RpcClientPtr cli)
         16.44 * (M_PI / 180), 90.0 * (M_PI / 180),  11.64 * (M_PI / 180)
     };
 
-    // 接口调用: 获取机器人的名字
+    // API call: Get the robot's name
     auto robot_name = cli->getRobotNames().front();
 
     auto robot_interface = cli->getRobotInterface(robot_name);
 
-    // 接口调用: 设置机械臂的速度比率
+    // API call: Set the speed fraction of the robot arm
     robot_interface->getMotionControl()->setSpeedFraction(0.3);
 
-    // 接口调用: 关节运动
+    // API call: Joint movement
     robot_interface->getMotionControl()->moveJoint(
         joint_angle1, 80 * (M_PI / 180), 60 * (M_PI / 180), 0, 0);
-    // 阻塞
+    // Blocking
     int ret = waitArrival(robot_interface);
     if (ret == 0) {
-        std::cout << "关节运动到路点1成功" << std::endl;
+        std::cout << "Joint moved to waypoint 1 successfully" << std::endl;
     } else {
-        std::cout << "关节运动到路点1失败" << std::endl;
+        std::cout << "Joint failed to move to waypoint 1" << std::endl;
     }
 
-    // 接口调用: 关节运动
+    // API call: Joint movement
     robot_interface->getMotionControl()->moveJoint(
         joint_angle2, 80 * (M_PI / 180), 60 * (M_PI / 180), 0, 0);
-    // 阻塞
+    // Blocking
     ret = waitArrival(robot_interface);
     if (ret == 0) {
-        std::cout << "关节运动到路点2成功" << std::endl;
+        std::cout << "Joint moved to waypoint 2 successfully" << std::endl;
     } else {
-        std::cout << "关节运动到路点2失败" << std::endl;
+        std::cout << "Joint failed to move to waypoint 2" << std::endl;
     }
 
-    // 接口调用: 关节运动
+    // API call: Joint movement
     robot_interface->getMotionControl()->moveJoint(
         joint_angle3, 80 * (M_PI / 180), 60 * (M_PI / 180), 0, 0);
-    // 阻塞
+    // Blocking
     ret = waitArrival(robot_interface);
     if (ret == 0) {
-        std::cout << "关节运动到路点3成功" << std::endl;
+        std::cout << "Joint moved to waypoint 3 successfully" << std::endl;
     } else {
-        std::cout << "关节运动到路点3失败" << std::endl;
+        std::cout << "Joint failed to move to waypoint 3" << std::endl;
     }
 }
 
 /**
- * 功能: 机械臂关节运动
- * 步骤:
- * 第一步: 设置 RPC 超时、连接 RPC 服务、机械臂登录
- * 第二步: 设置运动速度比率、以关节运动的方式依次经过3个路点
- * 第三步: RPC 退出登录、断开连接
+ * Function: Robot arm joint movement
+ * Steps:
+ * Step 1: Set RPC timeout, connect to RPC service, robot login
+ * Step 2: Set motion speed fraction, pass through 3 waypoints by joint movement
+ * Step 3: RPC logout, disconnect
  */
 
 #define LOCAL_IP "127.0.0.1"
@@ -109,24 +109,24 @@ void exampleMovej(RpcClientPtr cli)
 int main(int argc, char **argv)
 {
 #ifdef WIN32
-    // 将Windows控制台输出代码页设置为 UTF-8
+    // Set Windows console output code page to UTF-8
     SetConsoleOutputCP(CP_UTF8);
 #endif
 
     auto rpc_cli = std::make_shared<RpcClient>();
-    // 接口调用: 设置 RPC 超时
+    // API call: Set RPC timeout
     rpc_cli->setRequestTimeout(1000);
-    // 接口调用: 连接到 RPC 服务
+    // API call: Connect to RPC service
     rpc_cli->connect(LOCAL_IP, 30004);
-    // 接口调用: 登录
+    // API call: Login
     rpc_cli->login("aubo", "123456");
 
-    // 关节运动
+    // Joint movement
     exampleMovej(rpc_cli);
 
-    // 接口调用: 退出登录
+    // API call: Logout
     rpc_cli->logout();
-    // 接口调用: 断开连接
+    // API call: Disconnect
     rpc_cli->disconnect();
 
     return 0;

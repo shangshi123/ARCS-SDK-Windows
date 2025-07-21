@@ -14,16 +14,16 @@ using namespace arcs::common_interface;
 #define M_PI 3.14159265358979323846
 #endif
 
-// 实现阻塞功能: 当机械臂运动到目标路点时，程序再往下执行
+// Implement blocking: The program continues only after the robot arm reaches the target waypoint
 int waitArrival(RobotInterfacePtr impl)
 {
     const int max_retry_count = 5;
     int cnt = 0;
 
-    // 接口调用: 获取当前的运动指令 ID
+    // API call: Get current motion command ID
     int exec_id = impl->getMotionControl()->getExecId();
 
-    // 等待机械臂开始运动
+    // Wait for the robot arm to start moving
     while (exec_id == -1) {
         if (cnt++ > max_retry_count) {
             return -1;
@@ -32,7 +32,7 @@ int waitArrival(RobotInterfacePtr impl)
         exec_id = impl->getMotionControl()->getExecId();
     }
 
-    // 等待机械臂动作完成
+    // Wait for the robot arm to finish moving
     while (impl->getMotionControl()->getExecId() != -1) {
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
@@ -55,17 +55,17 @@ inline std::ostream &operator<<(std::ostream &os, const std::vector<T> &list)
 class TrajectoryIo
 {
 public:
-    // 构造函数，接受要打开的文件名作为参数
+    // Constructor, takes the filename to open as a parameter
     TrajectoryIo(const char *filename)
     {
         input_file_.open(filename, std::ios::in);
     }
 
-    // 检查文件是否成功打开
+    // Check if the file was opened successfully
     bool open()
     {
         if (!input_file_.is_open()) {
-            std::cerr << "无法打开轨迹文件. 请检查输入的文件路径是否正确."
+            std::cerr << "Unable to open trajectory file. Please check if the input file path is correct."
                       << std::endl;
             return false;
         }
@@ -73,10 +73,10 @@ public:
     }
     ~TrajectoryIo() { input_file_.close(); }
 
-    // 解析文件中的轨迹数据，
-    // 并将其转换为一个二维的 std::vector。
-    // 它逐行读取文件内容，将每行数据解析为一组 double 数值，
-    // 并将这些数值存储在一个嵌套的二维向量中。
+    // Parse trajectory data from the file,
+    // and convert it to a 2D std::vector.
+    // Reads the file line by line, parses each line into a set of double values,
+    // and stores these values in a nested 2D vector.
     std::vector<std::vector<double>> parse()
     {
         std::vector<std::vector<double>> res;
@@ -96,15 +96,15 @@ public:
         return res;
     }
 
-    // 切割字符串并转换为 double 类型
+    // Split string and convert to double type
     std::vector<double> split(const std::string &str, const char *delim)
     {
         std::vector<double> res;
         if ("" == str) {
             return res;
         }
-        // 先将要切割的字符串从string类型转换为char*类型
-        char *strs = new char[str.length() + 1]; // 不要忘了
+        // Convert the string to char* type first
+        char *strs = new char[str.length() + 1]; // Don't forget
         std::strcpy(strs, str.c_str());
 
         char *p = std::strtok(strs, delim);
@@ -116,7 +116,7 @@ public:
                 strs = nullptr;
                 throw p;
             }
-            res.push_back(v); // 存入结果数组
+            res.push_back(v); // Store in result array
             p = std::strtok(nullptr, delim);
         }
 
@@ -129,49 +129,49 @@ public:
     }
 
 private:
-    std::ifstream input_file_; // 输入文件流
+    std::ifstream input_file_; // Input file stream
 };
 
 /**
- * 测试1: 让1关节旋转120度，规划时间为10秒，
- * 在第5秒时下发第二个点，让第三关节旋转90度
- * 结论: 在机器人没到达目标点前，下发新目标点，
- * 机器人会放弃原目标点，直接向新的目标点运动
+ * Test 1: Rotate joint 1 by 120 degrees, planning time is 10 seconds,
+ * at the 5th second, send the second point to rotate joint 3 by 90 degrees
+ * Conclusion: If a new target point is sent before the robot reaches the original target,
+ * the robot will abandon the original target and move directly to the new target
  */
 int exampleServoj1(RpcClientPtr cli)
 {
-    // 接口调用: 获取机器人的名字
+    // API call: Get robot name
     auto robot_name = cli->getRobotNames().front();
     auto robot_interface = cli->getRobotInterface(robot_name);
 
-    // 接口调用: 设置机械臂的速度比率
+    // API call: Set robot arm speed fraction
     robot_interface->getMotionControl()->setSpeedFraction(0.3);
 
-    // 关节角，单位: 弧度
+    // Joint angles, unit: radians
     std::vector<double> joint_angle = {
         0.0 * (M_PI / 180),  -15.0 * (M_PI / 180), 100.0 * (M_PI / 180),
         25.0 * (M_PI / 180), 90.0 * (M_PI / 180),  0.0 * (M_PI / 180)
     };
 
-    // 接口调用: 关节运动
+    // API call: Joint movement
     robot_interface->getMotionControl()->moveJoint(
         joint_angle, 80 * (M_PI / 180), 60 * (M_PI / 180), 0, 0);
-    // 阻塞
+    // Blocking
     int ret = waitArrival(robot_interface);
     if (ret == 0) {
-        std::cout << "关节运动到初始位置成功" << std::endl;
+        std::cout << "Joint moved to initial position successfully" << std::endl;
     } else {
-        std::cout << "关节运动到初始位置失败" << std::endl;
+        std::cout << "Joint failed to move to initial position" << std::endl;
     }
 
-    // 接口调用: 开启servo模式
+    // API call: Enable servo mode
     robot_interface->getMotionControl()->setServoMode(true);
 
-    // 等待进入 servo 模式
+    // Wait to enter servo mode
     int i = 0;
     while (!robot_interface->getMotionControl()->isServoModeEnabled()) {
         if (i++ > 5) {
-            std::cout << "Servo 模式使能失败! 当前servo状态为 "
+            std::cout << "Failed to enable Servo mode! Current servo status is "
                       << cli->getRobotInterface(robot_name)
                              ->getMotionControl()
                              ->isServoModeEnabled()
@@ -184,33 +184,33 @@ int exampleServoj1(RpcClientPtr cli)
     std::vector<double> q1 = { -120.0 * (M_PI / 180), -15.0 * (M_PI / 180),
                                100.0 * (M_PI / 180),  25.0 * (M_PI / 180),
                                90.0 * (M_PI / 180),   0.0 * (M_PI / 180) };
-    std::cout << "向第一个目标点运动" << std::endl;
-    // 接口调用: 关节伺服运动
+    std::cout << "Moving to the first target point" << std::endl;
+    // API call: Joint servo movement
     robot_interface->getMotionControl()->servoJoint(q1, 0.1, 0.2, 10, 0.1, 200);
 
     std::this_thread::sleep_for(std::chrono::seconds(5));
 
     std::vector<double> q2 = { 0, 0, 90.0 / 180 * M_PI, 0, 0, 0 };
-    std::cout << "向第二个目标点运动" << std::endl;
-    // 接口调用: 关节伺服运动
+    std::cout << "Moving to the second target point" << std::endl;
+    // API call: Joint servo movement
     robot_interface->getMotionControl()->servoJoint(q2, 0.1, 0.2, 10, 0.1, 200);
 
-    // 等待运动结束
+    // Wait for movement to finish
     while (!cli->getRobotInterface(robot_name)->getRobotState()->isSteady()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
 
-    std::cout << "Servoj 运动结束" << std::endl;
+    std::cout << "Servoj movement finished" << std::endl;
 
-    // 关闭servo模式
+    // Disable servo mode
     robot_interface->getMotionControl()->setServoMode(false);
 
-    // 等待结束 servo 模式
+    // Wait to exit servo mode
     i = 0;
     while (robot_interface->getMotionControl()->isServoModeEnabled()) {
         if (i++ > 5) {
             std::cout
-                << "Servo 模式失能失败! 当前的 Servo 模式是 "
+                << "Failed to disable Servo mode! Current Servo mode is "
                 << robot_interface->getMotionControl()->isServoModeEnabled()
                 << std::endl;
             return -1;
@@ -222,59 +222,59 @@ int exampleServoj1(RpcClientPtr cli)
 }
 
 /**
- * 测试2: 采用servoj跟踪一个轨迹,目标点下发时间间隔5ms
+ * Test 2: Use servoj to track a trajectory, target point interval is 5ms
  */
 int exampleServoj2(RpcClientPtr cli)
 {
-    // 读取轨迹文件
+    // Read trajectory file
     auto filename = "../trajs/record6.offt";
     TrajectoryIo input(filename);
 
-    // 尝试打开轨迹文件，如果无法打开，直接返回
+    // Try to open trajectory file, return directly if failed
     if (!input.open()) {
         return 0;
     }
 
-    // 解析轨迹数据
+    // Parse trajectory data
     auto traj = input.parse();
 
-    // 检查轨迹文件中是否有路点，
-    // 如果数量为 0，输出错误消息并返回
+    // Check if there are waypoints in the trajectory file,
+    // if the number is 0, output error message and return
     auto traj_sz = traj.size();
     if (traj_sz == 0) {
-        std::cerr << "轨迹文件中的路点数量为0." << std::endl;
+        std::cerr << "Number of waypoints in trajectory file is 0." << std::endl;
         return 0;
     }
 
-    // 接口调用: 获取机器人的名字
+    // API call: Get robot name
     auto robot_name = cli->getRobotNames().front();
     auto robot_interface = cli->getRobotInterface(robot_name);
 
-    // 接口调用: 设置机械臂的速度比率
+    // API call: Set robot arm speed fraction
     robot_interface->getMotionControl()->setSpeedFraction(1);
 
-    // 接口调用: 关节运动到轨迹中的第一个点，否则容易引起较大超调
+    // API call: Move joint to the first point in the trajectory to avoid large overshoot
     robot_interface->getMotionControl()->moveJoint(traj[0], 80 * (M_PI / 180),
                                                    60 * (M_PI / 180), 0, 0);
 
-    // 阻塞
+    // Blocking
     int ret = waitArrival(robot_interface);
     if (ret == 0) {
-        std::cout << "关节运动到轨迹文件中的第一个路点成功" << std::endl;
+        std::cout << "Joint moved to the first waypoint in trajectory file successfully" << std::endl;
     } else {
-        std::cout << "关节运动到轨迹文件中的第一个路点失败" << std::endl;
+        std::cout << "Joint failed to move to the first waypoint in trajectory file" << std::endl;
     }
 
-    // 接口调用: 开启 servo 模式
+    // API call: Enable servo mode
     cli->getRobotInterface(robot_name)->getMotionControl()->setServoMode(true);
 
-    // 等待进入 servo 模式
+    // Wait to enter servo mode
     int i = 0;
     while (!cli->getRobotInterface(robot_name)
                 ->getMotionControl()
                 ->isServoModeEnabled()) {
         if (i++ > 5) {
-            std::cout << "Servo 模式使能失败! 当前的 Servo 模式是 "
+            std::cout << "Failed to enable Servo mode! Current Servo mode is "
                       << cli->getRobotInterface(robot_name)
                              ->getMotionControl()
                              ->isServoModeEnabled()
@@ -285,7 +285,7 @@ int exampleServoj2(RpcClientPtr cli)
     }
 
     for (size_t i = 1; i < traj.size(); i++) {
-        // 接口调用: 关节伺服运动
+        // API call: Joint servo movement
         cli->getRobotInterface(robot_name)
             ->getMotionControl()
             ->servoJoint(traj[i], 0.1, 0.2, 10, 0.1, 200);
@@ -293,22 +293,22 @@ int exampleServoj2(RpcClientPtr cli)
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
 
-    // 等待运动结束
+    // Wait for movement to finish
     while (!cli->getRobotInterface(robot_name)->getRobotState()->isSteady()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
 
-    std::cout << "Servoj 运动结束" << std::endl;
+    std::cout << "Servoj movement finished" << std::endl;
 
-    // 接口调用: 关闭 servo 模式
+    // API call: Disable servo mode
     cli->getRobotInterface(robot_name)->getMotionControl()->setServoMode(false);
 
-    // 等待结束 servo 模式
+    // Wait to exit servo mode
     while (cli->getRobotInterface(robot_name)
                ->getMotionControl()
                ->isServoModeEnabled()) {
         if (i++ > 5) {
-            std::cout << "Servo 模式失能失败! 当前的 Servo 模式是 "
+            std::cout << "Failed to disable Servo mode! Current Servo mode is "
                       << cli->getRobotInterface(robot_name)
                              ->getMotionControl()
                              ->isServoModeEnabled()
@@ -322,61 +322,61 @@ int exampleServoj2(RpcClientPtr cli)
 }
 
 /**
- * 测试3: 采用servoj mode 2 跟踪一个轨迹,目标点下发时间间隔5ms
+ * Test 3: Use servoj mode 2 to track a trajectory, target point interval is 5ms
  */
 int exampleServoj3(RpcClientPtr cli)
 {
-    // 读取轨迹文件
+    // Read trajectory file
     auto filename = "../trajs/record6.offt";
     TrajectoryIo input(filename);
 
-    // 尝试打开轨迹文件，如果无法打开，直接返回
+    // Try to open trajectory file, return directly if failed
     if (!input.open()) {
         return 0;
     }
 
-    // 解析轨迹数据
+    // Parse trajectory data
     auto traj = input.parse();
 
-    // 检查轨迹文件中是否有路点，
-    // 如果数量为 0，输出错误消息并返回
+    // Check if there are waypoints in the trajectory file,
+    // if the number is 0, output error message and return
     auto traj_sz = traj.size();
     if (traj_sz == 0) {
-        std::cerr << "轨迹文件中的路点数量为0." << std::endl;
+        std::cerr << "Number of waypoints in trajectory file is 0." << std::endl;
         return 0;
     }
 
-    // 接口调用: 获取机器人的名字
+    // API call: Get robot name
     auto robot_name = cli->getRobotNames().front();
     auto robot_interface = cli->getRobotInterface(robot_name);
 
-    // 接口调用: 设置机械臂的速度比率
+    // API call: Set robot arm speed fraction
     robot_interface->getMotionControl()->setSpeedFraction(1);
 
-    // 接口调用: 关节运动到轨迹中的第一个点，否则容易引起较大超调
+    // API call: Move joint to the first point in the trajectory to avoid large overshoot
     robot_interface->getMotionControl()->moveJoint(traj[0], 80 * (M_PI / 180),
                                                    60 * (M_PI / 180), 0, 0);
 
-    // 阻塞
+    // Blocking
     int ret = waitArrival(robot_interface);
     if (ret == 0) {
-        std::cout << "关节运动到轨迹文件中的第一个路点成功" << std::endl;
+        std::cout << "Joint moved to the first waypoint in trajectory file successfully" << std::endl;
     } else {
-        std::cout << "关节运动到轨迹文件中的第一个路点失败" << std::endl;
+        std::cout << "Joint failed to move to the first waypoint in trajectory file" << std::endl;
     }
 
-    // 接口调用: 开启 servo 模式 2
+    // API call: Enable servo mode 2
     cli->getRobotInterface(robot_name)
         ->getMotionControl()
         ->setServoModeSelect(2);
 
-    // 等待进入 servo 模式 2
+    // Wait to enter servo mode 2
     int i = 0;
     while (cli->getRobotInterface(robot_name)
                ->getMotionControl()
                ->getServoModeSelect() != 2) {
         if (i++ > 50) {
-            std::cout << "Servo 模式 2 使能失败! 当前的 Servo 模式是 "
+            std::cout << "Failed to enable Servo mode 2! Current Servo mode is "
                       << cli->getRobotInterface(robot_name)
                              ->getMotionControl()
                              ->getServoModeSelect()
@@ -387,7 +387,7 @@ int exampleServoj3(RpcClientPtr cli)
     }
 
     for (size_t i = 1; i < traj.size(); i++) {
-        // 接口调用: 关节伺服运动
+        // API call: Joint servo movement
         cli->getRobotInterface(robot_name)
             ->getMotionControl()
             ->servoJoint(traj[i], 0.1, 0.2, 0.1, 0.1, 200);
@@ -395,24 +395,24 @@ int exampleServoj3(RpcClientPtr cli)
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
 
-    // 等待运动结束
+    // Wait for movement to finish
     while (!cli->getRobotInterface(robot_name)->getRobotState()->isSteady()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
 
-    std::cout << "Servoj 运动结束" << std::endl;
+    std::cout << "Servoj movement finished" << std::endl;
 
-    // 接口调用: 关闭 servo 模式 2
+    // API call: Disable servo mode 2
     cli->getRobotInterface(robot_name)
         ->getMotionControl()
         ->setServoModeSelect(0);
 
-    // 等待结束 servo 模式 2
+    // Wait to exit servo mode 2
     while (cli->getRobotInterface(robot_name)
                ->getMotionControl()
                ->getServoModeSelect() != 0) {
         if (i++ > 50) {
-            std::cout << "Servo 模式 2 失能失败! 当前的 Servo 模式是 "
+            std::cout << "Failed to disable Servo mode 2! Current Servo mode is "
                       << cli->getRobotInterface(robot_name)
                              ->getMotionControl()
                              ->getServoModeSelect()
@@ -427,30 +427,30 @@ int exampleServoj3(RpcClientPtr cli)
 
 #define LOCAL_IP "127.0.0.1"
 /**
- * servoj功能使用步骤:
- * 1、采用实时系统测试servoj功能
- * 2、孤立一个CPU，保证该CPU没有其他任务
- * 3、将该进程设置为实时进程，优先级设置为最大
- * 4、绑定CPU，将该实时进程绑定到第二步孤立的CPU上
+ * Steps to use servoj function:
+ * 1. Use a real-time system to test servoj function
+ * 2. Isolate a CPU to ensure no other tasks on it
+ * 3. Set the process as a real-time process with maximum priority
+ * 4. Bind the real-time process to the CPU isolated in step 2
  */
 int main(void)
 {
 #ifdef WIN32
-    // 将Windows控制台输出代码页设置为 UTF-8
+    // Set Windows console output code page to UTF-8
     SetConsoleOutputCP(CP_UTF8);
 #endif
 #ifndef _WIN32
-    // 实时优先级最大值、最小值
+    // Maximum and minimum real-time priority
     int sched_max = sched_get_priority_max(SCHED_FIFO);
 
-    // 设置实时调度策略及优先级
+    // Set real-time scheduling policy and priority
     struct sched_param sParam;
     sParam.sched_priority = sched_max;
     sched_setscheduler(0, SCHED_FIFO, &sParam);
     auto i_schedFlag = sched_getscheduler(0);
-    printf("设置调度策略 = [%d]\n", i_schedFlag);
+    printf("Set scheduling policy = [%d]\n", i_schedFlag);
 
-    // 绑定CPU
+    // Bind CPU
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
     CPU_SET(1, &cpuset);
@@ -462,20 +462,20 @@ int main(void)
 #endif
 
     auto rpc_cli = std::make_shared<RpcClient>();
-    // 接口调用: 设置 RPC 超时
+    // API call: Set RPC timeout
     rpc_cli->setRequestTimeout(1000);
-    // 接口调用: 连接到 RPC 服务
+    // API call: Connect to RPC service
     rpc_cli->connect(LOCAL_IP, 30004);
-    // 接口调用: 登录
+    // API call: Login
     rpc_cli->login("aubo", "123456");
 
     exampleServoj1(rpc_cli);
     // exampleServoj2(rpc_cli);
     // exampleServoj3(rpc_cli);
 
-    // 接口调用: RPC 退出登录
+    // API call: RPC logout
     rpc_cli->logout();
-    // 接口调用: RPC 断开连接
+    // API call: RPC disconnect
     rpc_cli->disconnect();
 
     return 0;

@@ -109,17 +109,17 @@ void printRecipe(RtdeRecipeMap &recipe)
     }
 }
 
-// 配置输出
+// Configure output
 void configSubscribe(RtdeClientPtr cli)
 {
-    // 接口调用: 设置 topic1
+    // API call: set topic1
     int topic1 =
         cli->setTopic(false,
                       { "R1_actual_q", "R1_actual_current", "R1_robot_mode",
                         "R1_safety_mode", "runtime_state", "line_number",
                         "R1_actual_TCP_pose", "R1_motion_progress" },
                       50, 0);
-    // 接口调用: 订阅
+    // API call: subscribe
     cli->subscribe(topic1, [](InputParser &parser) {
         std::unique_lock<std::mutex> lck(rtde_mtx_);
         actual_q_ = parser.popVectorDouble();
@@ -132,13 +132,13 @@ void configSubscribe(RtdeClientPtr cli)
         motion_progress = parser.popDouble();
     });
 
-    // 接口调用: 设置 topic2
+    // API call: set topic2
     int topic2 =
         cli->setTopic(false,
                       { "R1_joint_temperatures", "R1_joint_mode",
                         "R1_actual_main_voltage", "R1_actual_robot_voltage" },
                       1, 1);
-    // 接口调用: 订阅
+    // API call: subscribe
     cli->subscribe(topic2, [](InputParser &parser) {
         std::unique_lock<std::mutex> lck(rtde_mtx_);
         joint_temperatures_ = parser.popVectorDouble();
@@ -147,7 +147,7 @@ void configSubscribe(RtdeClientPtr cli)
         actual_robot_voltage_ = parser.popDouble();
     });
 
-    // 接口调用: 设置 topic3
+    // API call: set topic3
     int topic3 = cli->setTopic(
         false,
         { "output_bit_registers_0_to_63", "output_bit_registers_64_to_127",
@@ -157,7 +157,7 @@ void configSubscribe(RtdeClientPtr cli)
           "input_float_registers_r0", "input_double_registers_r1",
           "input_int16_registers_r0", "input_int16_registers_0_to_63" },
         1, 12);
-    // 接口调用: 订阅
+    // API call: subscribe
     cli->subscribe(topic3, [](InputParser &parser) {
         std::unique_lock<std::mutex> lck(rtde_mtx_);
         out_bit_lower_ = parser.popInt64();
@@ -175,12 +175,12 @@ void configSubscribe(RtdeClientPtr cli)
     });
 }
 
-// 设置rtde输入
+// Set rtde input
 void setInput(RtdeClientPtr cli)
 {
-    // 输入
-    // 单一设置输入
-    // 接口调用: 发布
+    // Input
+    // Set input individually
+    // API call: publish
     //    cli->publish(arcs::common_interface::RtdeInput::input_bit_registers0_to_31,
     //                 [](arcs::aubo_sdk::OutputBuilder &ro) { ro.push(0x00ff);
     //                 });
@@ -204,7 +204,7 @@ void setInput(RtdeClientPtr cli)
     //                 [](arcs::aubo_sdk::OutputBuilder &ro) { ro.push(2.22222);
     //                 });
 
-    // 组合设置输入
+    // Set input in combination
     int topic5 = cli->setTopic(
         true,
         { "input_bit_registers0_to_31", "input_bit_registers32_to_63",
@@ -243,7 +243,7 @@ void setInput(RtdeClientPtr cli)
     });
 }
 
-// 打印更新信息
+// Print update information
 void update()
 {
     std::unique_lock<std::mutex> lck(rtde_mtx_);
@@ -312,27 +312,27 @@ void update()
 }
 
 /**
- * 功能: RTDE
- * 步骤:
- * 第一步: 连接 RTDE UDS服务、机械臂登录
- * 第二步: 设置rtde输入
- * 第三步: 配置输出
- * 第四步: 打印更新信息
+ * Function: RTDE
+ * Steps:
+ * Step 1: Connect to RTDE UDS service, robot login
+ * Step 2: Set rtde input
+ * Step 3: Configure output
+ * Step 4: Print update information
  */
 #define LOCAL_IP "127.0.0.1"
 
 int main(int argc, char **argv)
 {
     auto rtde_cli = std::make_shared<RtdeClient>(1);
-    // 接口调用: 连接到 RTDE 服务
+    // API call: connect to RTDE service
     rtde_cli->connect();
-    // 接口调用: 登录
+    // API call: login
     rtde_cli->login("aubo", "123456");
 
-    // 设置rtde输入
+    // Set rtde input
     setInput(rtde_cli);
 
-    // 配置输出
+    // Configure output
     configSubscribe(rtde_cli);
 
     std::cout << "=================output_recipe==================="
@@ -345,7 +345,7 @@ int main(int argc, char **argv)
     printRecipe(input_recipe);
 
     while (1) {
-        // 打印更新信息
+        // Print update information
         update();
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }

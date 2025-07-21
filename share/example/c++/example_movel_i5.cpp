@@ -10,15 +10,15 @@ using namespace arcs::aubo_sdk;
 #define M_PI 3.14159265358979323846
 #endif
 
-// 实现阻塞功能: 当机械臂运动到目标路点时，程序再往下执行
+// Blocking function: The program continues only after the robot reaches the target waypoint
 int waitArrival(RobotInterfacePtr impl) {
   const int max_retry_count = 5;
   int cnt = 0;
 
-  // 接口调用: 获取当前的运动指令 ID
+  // API call: Get the current motion command ID
   int exec_id = impl->getMotionControl()->getExecId();
 
-  // 等待机械臂开始运动
+  // Wait for the robot to start moving
   while (exec_id == -1) {
     if (cnt++ > max_retry_count) {
       return -1;
@@ -27,7 +27,7 @@ int waitArrival(RobotInterfacePtr impl) {
     exec_id = impl->getMotionControl()->getExecId();
   }
 
-  // 等待机械臂动作完成
+  // Wait for the robot to finish the action
   while (impl->getMotionControl()->getExecId() != -1) {
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
   }
@@ -36,11 +36,11 @@ int waitArrival(RobotInterfacePtr impl) {
 }
 
 void exampleMovel(RpcClientPtr cli) {
-  // 关节角，单位: 弧度
+  // Joint angles, unit: radians
   std::vector<double> joint_angle = {0.0 * (M_PI / 180),   -15.0 * (M_PI / 180),
                                      100.0 * (M_PI / 180), 25.0 * (M_PI / 180),
                                      90.0 * (M_PI / 180),  0.0 * (M_PI / 180)};
-  // 位姿
+  // Pose
   std::vector<double> pose1 = {-0.155944, -0.727344, 0.439066,
                                3.05165,   0.0324355, 1.80417};
   std::vector<double> pose2 = {-0.581143, -0.357548, 0.439066,
@@ -48,91 +48,91 @@ void exampleMovel(RpcClientPtr cli) {
   std::vector<double> pose3 = {0.503502, -0.420646, 0.439066,
                                3.05165,  0.0324355, 1.80417};
 
-  // 接口调用: 获取机器人的名字
+  // API call: Get the robot's name
   auto robot_name = cli->getRobotNames().front();
 
   auto robot_interface = cli->getRobotInterface(robot_name);
 
-  // 接口调用: 设置机械臂的速度比率
+  // API call: Set the robot's speed fraction
   robot_interface->getMotionControl()->setSpeedFraction(0.75);
 
-  // 接口调用: 设置工具中心点（TCP相对于法兰盘中心的偏移）
+  // API call: Set the tool center point (TCP offset relative to flange center)
   std::vector<double> tcp_offset(6, 0.0);
   robot_interface->getRobotConfig()->setTcpOffset(tcp_offset);
 
-  // 接口调用: 关节运动到起始位置
+  // API call: Move joints to the starting position
   robot_interface->getMotionControl()->moveJoint(joint_angle, 80 * (M_PI / 180),
                                                  60 * (M_PI / 180), 0, 0);
-  // 阻塞
+  // Blocking
   int ret = waitArrival(robot_interface);
   if (ret == 0) {
-    std::cout << "关节运动到起始位置成功！" << std::endl;
+    std::cout << "Joint movement to starting position succeeded!" << std::endl;
   } else {
-    std::cout << "关节运动到起始位置失败！" << std::endl;
+    std::cout << "Joint movement to starting position failed!" << std::endl;
   }
 
-  // 接口调用: 直线运动到位置1
+  // API call: Linear movement to position 1
   robot_interface->getMotionControl()->moveLine(pose1, 1.2, 0.25, 0.025, 0);
-  // 阻塞
+  // Blocking
   ret = waitArrival(robot_interface);
   if (ret == 0) {
-    std::cout << "直线运动到位置1成功！" << std::endl;
+    std::cout << "Linear movement to position 1 succeeded!" << std::endl;
   } else {
-    std::cout << "直线运动到位置1失败！" << std::endl;
+    std::cout << "Linear movement to position 1 failed!" << std::endl;
   }
 
-  // 接口调用: 直线运动到位置2
+  // API call: Linear movement to position 2
   robot_interface->getMotionControl()->moveLine(pose2, 1.2, 0.25, 0.025, 0);
-  // 阻塞
+  // Blocking
   ret = waitArrival(robot_interface);
   if (ret == 0) {
-    std::cout << "直线运动到位置2成功！" << std::endl;
+    std::cout << "Linear movement to position 2 succeeded!" << std::endl;
   } else {
-    std::cout << "直线运动到位置2失败！" << std::endl;
+    std::cout << "Linear movement to position 2 failed!" << std::endl;
   }
 
-  // 接口调用: 直线运动到位置3
+  // API call: Linear movement to position 3
   robot_interface->getMotionControl()->moveLine(pose3, 1.2, 0.25, 0.025, 0);
-  // 阻塞
+  // Blocking
   ret = waitArrival(robot_interface);
   if (ret == 0) {
-    std::cout << "直线运动到位置3成功！" << std::endl;
+    std::cout << "Linear movement to position 3 succeeded!" << std::endl;
   } else {
-    std::cout << "直线运动到位置3失败！" << std::endl;
+    std::cout << "Linear movement to position 3 failed!" << std::endl;
   }
 }
 
 /**
- * 功能: 机械臂直线运动
- * 步骤:
- * 第一步: 设置 RPC 超时、连接 RPC 服务、机械臂登录
- * 第二步: 设置运动速度比率和工具中心点
- * 第三步: 先关节运动到起始位置，然后再以直线运动的方式依次经过3个路点
- * 第四步: RPC 退出登录、断开连接
+ * Function: Robot linear movement
+ * Steps:
+ * Step 1: Set RPC timeout, connect to RPC service, robot login
+ * Step 2: Set motion speed fraction and tool center point
+ * Step 3: First move joints to the starting position, then pass through 3 waypoints with linear movement
+ * Step 4: RPC logout and disconnect
  */
 
 #define LOCAL_IP "127.0.0.1"
 
 int main(int argc, char **argv) {
 #ifdef WIN32
-  // 将Windows控制台输出代码页设置为 UTF-8
+  // Set Windows console output code page to UTF-8
   SetConsoleOutputCP(CP_UTF8);
 #endif
 
   auto rpc_cli = std::make_shared<RpcClient>();
-  // 接口调用: 设置 RPC 超时
+  // API call: Set RPC timeout
   rpc_cli->setRequestTimeout(1000);
-  // 接口调用: 连接到 RPC 服务
+  // API call: Connect to RPC service
   rpc_cli->connect(LOCAL_IP, 30004);
-  // 接口调用: 登录
+  // API call: Login
   rpc_cli->login("aubo", "123456");
 
-  // 关节运动
+  // Joint movement
   exampleMovel(rpc_cli);
 
-  // 接口调用: 退出登录
+  // API call: Logout
   rpc_cli->logout();
-  // 接口调用: 断开连接
+  // API call: Disconnect
   rpc_cli->disconnect();
 
   return 0;
