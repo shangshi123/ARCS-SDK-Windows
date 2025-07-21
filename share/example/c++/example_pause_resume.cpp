@@ -16,7 +16,7 @@ using namespace arcs::aubo_sdk;
 
 void robotMotionControl(RpcClientPtr cli)
 {
-    // 关节角，单位: 弧度
+    // Joint angles, unit: radians
     std::vector<double> joint_angle1 = {
         0.0 * (M_PI / 180),  -15.0 * (M_PI / 180), 100.0 * (M_PI / 180),
         25.0 * (M_PI / 180), 90.0 * (M_PI / 180),  0.0 * (M_PI / 180)
@@ -37,78 +37,78 @@ void robotMotionControl(RpcClientPtr cli)
         52.37 * (M_PI / 180), 90.0 * (M_PI / 180),   11.64 * (M_PI / 180)
     };
 
-    // 接口调用: 获取机器人的名字
+    // API call: Get the robot's name
     auto robot_name = cli->getRobotNames().front();
 
     auto robot_interface = cli->getRobotInterface(robot_name);
 
-    // 接口调用: 开启运行时(RuntimeMachine)
+    // API call: Start the runtime machine
     cli->getRuntimeMachine()->start();
 
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
-    // 接口调用: 设置机械臂的速度比率
+    // API call: Set the robot arm's speed fraction
     robot_interface->getMotionControl()->setSpeedFraction(1);
 
-    // 接口调用: 获取运行时的状态
+    // API call: Get the runtime status
     auto runtime_status = cli->getRuntimeMachine()->getRuntimeState();
 
     while (runtime_status != RuntimeState::Stopped) {
-        // 接口调用: 关节运动
+        // API call: Joint movement
         robot_interface->getMotionControl()->moveJoint(
             joint_angle1, 80 * (M_PI / 180), 60 * (M_PI / 180), 0, 0);
         std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
-        // 接口调用: 关节运动
+        // API call: Joint movement
         robot_interface->getMotionControl()->moveJoint(
             joint_angle2, 80 * (M_PI / 180), 60 * (M_PI / 180), 0, 0);
         std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
-        // 接口调用: 关节运动
+        // API call: Joint movement
         robot_interface->getMotionControl()->moveJoint(
             joint_angle3, 80 * (M_PI / 180), 60 * (M_PI / 180), 0, 0);
         std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
-        // 接口调用: 关节运动
+        // API call: Joint movement
         robot_interface->getMotionControl()->moveJoint(
             joint_angle4, 80 * (M_PI / 180), 60 * (M_PI / 180), 0, 0);
         std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
-        // 接口调用: 获取运行时(RuntimeMachine)状态
+        // API call: Get the runtime machine status
         runtime_status = cli->getRuntimeMachine()->getRuntimeState();
     }
 
-    // 接口调用: 停止关节运动
+    // API call: Stop joint movement
     robot_interface->getMotionControl()->stopJoint(30);
 }
 
-// 控制暂停/恢复/停止
+// Control pause/resume/stop
 void controlOperations(RpcClientPtr rpc_cli, bool &exit_flag)
 {
     std::string input;
     while (!exit_flag) {
         std::cout
-            << "请输入命令(p/r/s): p表示暂停运动，r表示恢复运动，s表示停止运动"
+            << "Please enter command (p/r/s): p means pause motion, r means resume motion, s means stop motion"
             << std::endl;
 
         std::cin >> input;
 
         if (input == "p") {
-            // 接口调用: 暂停运行时
+            // API call: Pause runtime
             rpc_cli->getRuntimeMachine()->pause();
-            std::cout << "已暂停运行时" << std::endl;
+            std::cout << "Runtime paused" << std::endl;
         } else if (input == "r") {
-            // 接口调用: 恢复运行时
+            // API call: Resume runtime
             rpc_cli->getRuntimeMachine()->resume();
-            std::cout << "已恢复运行时" << std::endl;
+            std::cout << "Runtime resumed" << std::endl;
         } else if (input == "s") {
-            // 接口调用: 停止运行时
-            // 注意: abort并不能停止机械臂运动
+            // API call: Stop runtime
+            // Note: abort cannot stop robot arm motion
             rpc_cli->getRuntimeMachine()->abort();
-            exit_flag = true; // 设置退出标志以结束线程
-            std::cout << "已停止运行时" << std::endl;
+            exit_flag = true; // Set exit flag to end thread
+            std::cout << "Runtime stopped" << std::endl;
         } else {
-            std::cout << "无效命令，请重新输入" << std::endl;
+            std::cout << "Invalid command, please re-enter" << std::endl;
         }
     }
 }
@@ -122,27 +122,27 @@ int main(int argc, char **argv)
 #endif
 
     auto rpc_cli = std::make_shared<RpcClient>();
-    // 接口调用: 设置 RPC 超时
+    // API call: Set RPC timeout
     rpc_cli->setRequestTimeout(1000);
-    // 接口调用: 连接到 RPC 服务
+    // API call: Connect to RPC service
     rpc_cli->connect(LOCAL_IP, 30004);
-    // 接口调用: 登录
+    // API call: Login
     rpc_cli->login("aubo", "123456");
 
-    // 退出线程标志
+    // Exit thread flag
     bool exit_flag = false;
 
-    // 创建控制机器人运动和操作的线程
+    // Create threads for controlling robot motion and operations
     std::thread motion_thread(robotMotionControl, rpc_cli);
     std::thread control_thread(controlOperations, rpc_cli, std::ref(exit_flag));
 
-    // 等待线程完成
+    // Wait for threads to finish
     motion_thread.join();
     control_thread.join();
 
-    // 接口调用: 退出登录
+    // API call: Logout
     rpc_cli->logout();
-    // 接口调用: 断开连接
+    // API call: Disconnect
     rpc_cli->disconnect();
 
     return 0;

@@ -30,7 +30,7 @@ inline std::ostream &operator<<(std::ostream &os, const std::vector<T> &vd)
     return os;
 }
 
-// 实现阻塞功能: 当机械臂运动到目标路点时，程序再往下执行
+// Implement blocking functionality: The program continues only when the robot arm reaches the target waypoint
 int waitArrival(const std::vector<AxisInterfacePtr> &axis,
                 const std::vector<std::string> names,
                 const std::vector<double> way)
@@ -61,11 +61,11 @@ int waitArrival(const std::vector<AxisInterfacePtr> &axis,
 }
 
 /**
- * 功能: 机械臂关节运动
- * 步骤:
- * 第一步: 设置 RPC 超时、连接 RPC 服务、机械臂登录
- * 第二步: 设置运动速度比率、以关节运动的方式依次经过3个路点
- * 第三步: RPC 退出登录、断开连接
+ * Function: Robot arm joint movement
+ * Steps:
+ * Step 1: Set RPC timeout, connect to RPC service, robot arm login
+ * Step 2: Set motion speed ratio, pass through 3 waypoints in joint motion mode
+ * Step 3: RPC logout, disconnect
  */
 
 void exampleMovej(RpcClientPtr cli)
@@ -95,9 +95,9 @@ void exampleMovej(RpcClientPtr cli)
 
         int ret = waitArrival(axis, names, way1);
         if (ret == 0) {
-            std::cout << "关节运动到路点1成功" << std::endl;
+            std::cout << "Joint movement to waypoint 1 succeeded" << std::endl;
         } else {
-            std::cout << "关节运动到路点1失败" << std::endl;
+            std::cout << "Joint movement to waypoint 1 failed" << std::endl;
         }
 
         for (size_t i = 0; i < names.size(); i++) {
@@ -107,9 +107,9 @@ void exampleMovej(RpcClientPtr cli)
 
         ret = waitArrival(axis, names, way1);
         if (ret == 0) {
-            std::cout << "关节运动到路点2成功" << std::endl;
+            std::cout << "Joint movement to waypoint 2 succeeded" << std::endl;
         } else {
-            std::cout << "关节运动到路点2失败" << std::endl;
+            std::cout << "Joint movement to waypoint 2 failed" << std::endl;
         }
     }
 }
@@ -119,25 +119,25 @@ void exampleMovej(RpcClientPtr cli)
 int main(int argc, char **argv)
 {
 #ifdef WIN32
-    // 将Windows控制台输出代码页设置为 UTF-8
+    // Set Windows console output code page to UTF-8
     SetConsoleOutputCP(CP_UTF8);
 #endif
 
     auto rpc_cli = std::make_shared<RpcClient>();
-    // 接口调用: 设置 RPC 超时
+    // API call: Set RPC timeout
     rpc_cli->setRequestTimeout(1000);
-    // 接口调用: 连接到 RPC 服务
+    // API call: Connect to RPC service
 
     rpc_cli->connect("172.19.19.112", 30004);
-    // 接口调用: 登录
+    // API call: Login
     rpc_cli->login("aubo", "123456");
 
-    // 关节运动
+    // Joint movement
     exampleMovej(rpc_cli);
 
-    // 接口调用: 退出登录
+    // API call: Logout
     rpc_cli->logout();
-    // 接口调用: 断开连接
+    // API call: Disconnect
     rpc_cli->disconnect();
 
     return 0;

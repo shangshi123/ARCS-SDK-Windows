@@ -13,7 +13,7 @@ using namespace arcs::aubo_sdk;
 #define M_PI 3.14159265358979323846
 #endif
 
-// 计算当前关节角与目标关节角的绝对差值
+// Calculate the absolute difference between current joint angles and target joint angles
 double distance(const std::vector<double> &a, const std::vector<double> &b)
 {
     double res = 0.;
@@ -27,41 +27,41 @@ double distance(const std::vector<double> &a, const std::vector<double> &b)
     return sqrt(res);
 }
 
-// 实现阻塞功能: 当机械臂运动到目标路点时，程序再往下执行
+// Blocking function: The program continues only when the robot arm reaches the target waypoint
 void waitArrival(RobotInterfacePtr impl, std::vector<double> target)
 {
     while (1) {
-        // 接口调用: 获取当前的关节角
+        // API call: Get current joint angles
         std::vector cur = impl->getRobotState()->getJointPositions();
-        // 当前关节角与目标关节角的绝对差值小于 0.0001时，跳出循环
+        // Break the loop when the absolute difference between current and target joint angles is less than 0.0001
         double dis = distance(cur, target);
         if (dis < 0.0001) {
             break;
         }
-        printf("当前关节角:%f,%f,%f,%f,%f,%f\n", cur.at(0), cur.at(1),
+        printf("Current joint angles:%f,%f,%f,%f,%f,%f\n", cur.at(0), cur.at(1),
                cur.at(2), cur.at(3), cur.at(4), cur.at(5));
-        printf("目标关节角:%f,%f,%f,%f,%f,%f\n", target.at(0), target.at(1),
+        printf("Target joint angles:%f,%f,%f,%f,%f,%f\n", target.at(0), target.at(1),
                target.at(2), target.at(3), target.at(4), target.at(5));
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 }
 
-// 关节运动恢复
+// Joint movement recovery
 void collision_recovery_movej(RpcClientPtr cli)
 
 {
-    // 接口调用: 获取机器人的名字
+    // API call: Get the robot's name
     auto name = cli->getRobotNames().front();
     auto impl = cli->getRobotInterface(name);
 
-    // 接口调用: 获取碰撞后要恢复到的位置
+    // API call: Get the position to recover to after collision
     auto joint = impl->getMotionControl()->getPauseJointPositions();
 
-    // 打印要恢复的位置
-    printf("要恢复的位置:%f,%f,%f,%f,%f,%f\n", joint.at(0), joint.at(1),
+    // Print the position to recover to
+    printf("Position to recover to:%f,%f,%f,%f,%f,%f\n", joint.at(0), joint.at(1),
            joint.at(2), joint.at(3), joint.at(4), joint.at(5));
 
-    // 接口调用: 模拟碰撞后的示教运动
+    // API call: Simulate teaching movement after collision
     impl->getMotionControl()->resumeSpeedLine({ 0, 0, -0.05, 0, 0, 0 }, 1.2,
                                               100);
 #ifdef WIN32
@@ -69,7 +69,7 @@ void collision_recovery_movej(RpcClientPtr cli)
 #else
     usleep(1000 * 1000 * 1);
 #endif
-    // 接口调用: 停止示教运动
+    // API call: Stop teaching movement
     impl->getMotionControl()->resumeStopLine(10, 10);
 #ifdef WIN32
     Sleep(1000 * 1);
@@ -77,35 +77,35 @@ void collision_recovery_movej(RpcClientPtr cli)
     usleep(1000 * 1000 * 1);
 #endif
 
-    // 接口调用: 关节运动到暂停点
+    // API call: Move joints to the pause point
     impl->getMotionControl()->resumeMoveJoint(joint, 1, 1, 0);
-    // 阻塞
+    // Blocking
     waitArrival(impl, joint);
 
-    // 接口调用: 恢复规划器运行
+    // API call: Resume planner operation
     cli->getRuntimeMachine()->resume();
 }
 
-// 直线运动恢复
+// Linear movement recovery
 void collision_recovery_movel(RpcClientPtr cli)
 
 {
-    // 接口调用: 获取机器人的名字
+    // API call: Get the robot's name
     auto name = cli->getRobotNames().front();
     auto impl = cli->getRobotInterface(name);
 
-    // 接口调用: 设置工具中心点（TCP相对于法兰盘中心的偏移）
+    // API call: Set tool center point (TCP offset relative to flange center)
     std::vector<double> tcp_offset(6, 0.0);
     impl->getRobotConfig()->setTcpOffset(tcp_offset);
 
-    // 接口调用: 获取碰撞后要恢复到的位置
+    // API call: Get the position to recover to after collision
     auto joint = impl->getMotionControl()->getPauseJointPositions();
 
-    // 打印要恢复的位置
-    printf("要恢复的关节角位置:%f,%f,%f,%f,%f,%f\n", joint.at(0), joint.at(1),
+    // Print the joint angle position to recover to
+    printf("Joint angle position to recover to:%f,%f,%f,%f,%f,%f\n", joint.at(0), joint.at(1),
            joint.at(2), joint.at(3), joint.at(4), joint.at(5));
 
-    // 接口调用: 模拟碰撞后的示教运动
+    // API call: Simulate teaching movement after collision
     impl->getMotionControl()->resumeSpeedLine({ 0, 0, -0.05, 0, 0, 0 }, 1.2,
                                               100);
 #ifdef WIN32
@@ -113,7 +113,7 @@ void collision_recovery_movel(RpcClientPtr cli)
 #else
     usleep(1000 * 1000 * 1);
 #endif
-    // 接口调用: 停止示教运动
+    // API call: Stop teaching movement
     impl->getMotionControl()->resumeStopLine(10, 10);
 #ifdef WIN32
     Sleep(1000 * 1);
@@ -121,19 +121,19 @@ void collision_recovery_movel(RpcClientPtr cli)
     usleep(1000 * 1000 * 1);
 #endif
 
-    // 接口调用: 正解获得暂停点的位置姿态
+    // API call: Use forward kinematics to get the pose of the pause point
     auto result = impl->getRobotAlgorithm()->forwardKinematics(joint);
 
     if (0 == std::get<1>(result)) {
-        // 接口调用: 直线运动到暂停点
+        // API call: Linear movement to the pause point
         impl->getMotionControl()->resumeMoveLine(std::get<0>(result), 1.2, 0.25,
                                                  0.0);
     }
-    // 阻塞
+    // Blocking
     waitArrival(impl, joint);
-    std::cout << "直线运动到暂停点" << std::endl;
+    std::cout << "Linear movement to pause point" << std::endl;
 
-    // 接口调用: 恢复规划器运行
+    // API call: Resume planner operation
     cli->getRuntimeMachine()->resume();
 }
 
@@ -142,26 +142,26 @@ void collision_recovery_movel(RpcClientPtr cli)
 int main(int argc, char **argv)
 {
 #ifdef WIN32
-    // 将Windows控制台输出代码页设置为 UTF-8
+    // Set Windows console output code page to UTF-8
     SetConsoleOutputCP(CP_UTF8);
 #endif
     auto rpc_cli = std::make_shared<RpcClient>();
-    // 接口调用: 设置 RPC 超时
+    // API call: Set RPC timeout
     rpc_cli->setRequestTimeout(1000);
-    // 接口调用: 连接到 RPC 服务
+    // API call: Connect to RPC service
     rpc_cli->connect(LOCAL_IP, 30004);
-    // 接口调用: 登录
+    // API call: Login
     rpc_cli->login("aubo", "123456");
 
-    // 关节运动恢复
+    // Joint movement recovery
     collision_recovery_movej(rpc_cli);
 
-    // 直线运动恢复
+    // Linear movement recovery
     //    collision_recovery_movel(rpc_cli);
 
-    // 接口调用: 退出登录
+    // API call: Logout
     rpc_cli->logout();
-    // 接口调用: 断开连接
+    // API call: Disconnect
     rpc_cli->disconnect();
 
     return 0;

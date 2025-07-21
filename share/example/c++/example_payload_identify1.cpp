@@ -22,7 +22,7 @@ inline std::ostream &operator<<(std::ostream &os, const std::vector<T> &list)
     }
     return os;
 }
-// 实现阻塞功能: 当机械臂运动到目标路点时，程序再往下执行
+// Implement blocking functionality: The program continues only when the robot arm reaches the target waypoint
 int waitArrivel(RobotInterfacePtr impl)
 {
     int cnt = 0;
@@ -92,7 +92,7 @@ int confirmPayloadIdentifyTraj(RpcClientPtr cli, std::vector<double> point1,
          ? #name "1," #name "2," #name "3," #name "4," #name "5," #name "6" \
          : #name "1," #name "2," #name "3," #name "4," #name "5," #name     \
                  "6," #name "7")
-    // 为了匹配诊断文件格式，需要增加Time表头
+    // To match the diagnostic file format, add the Time header
     file << "Time"
          << ",";
     file << VEC(q, dof, 6) << ",";
@@ -112,7 +112,7 @@ int confirmPayloadIdentifyTraj(RpcClientPtr cli, std::vector<double> point1,
                      ->pathMovej(point1, 0., point2, 0., 0.001);
     std::cout << "q1_q2.size: " << q1_q2.size() << std::endl;
     for (size_t i = 0; i < q1_q2.size(); i++) {
-        // 写入时间数据
+        // Write time data
         file << 0 << ",";
         file << q1_q2[i] << ",";
         file << qd << ",";
@@ -126,7 +126,7 @@ int confirmPayloadIdentifyTraj(RpcClientPtr cli, std::vector<double> point1,
                      ->pathMovej(point2, 0., point3, 0., 0.001);
     std::cout << "q2_q3.size: " << q2_q3.size() << std::endl;
     for (size_t i = 0; i < q2_q3.size(); i++) {
-        // 写入时间数据
+        // Write time data
         file << 0 << ",";
         file << q2_q3[i] << ",";
         file << qd << ",";
@@ -135,10 +135,10 @@ int confirmPayloadIdentifyTraj(RpcClientPtr cli, std::vector<double> point1,
         file << temperature << ",";
         file << std::endl;
     }
-    // 正反轨迹数据拼接
+    // Concatenate forward and reverse trajectory data
     for (std::vector<std::vector<double>>::iterator it = q2_q3.end() - 1;
          it >= q2_q3.begin(); it--) {
-        // 写入时间数据
+        // Write time data
         file << 0 << ",";
         file << *it << ",";
         file << qd << ",";
@@ -149,7 +149,7 @@ int confirmPayloadIdentifyTraj(RpcClientPtr cli, std::vector<double> point1,
     }
     for (std::vector<std::vector<double>>::iterator it = q1_q2.end() - 1;
          it >= q1_q2.begin(); it--) {
-        // 写入时间数据
+        // Write time data
         file << 0 << ",";
         file << *it << ",";
         file << qd << ",";
@@ -165,18 +165,18 @@ int confirmPayloadIdentifyTraj(RpcClientPtr cli, std::vector<double> point1,
                    ->getRobotAlgorithm()
                    ->payloadIdentify1(file_name);
 
-    // 预筛选阶段总耗时1s左右，可以删掉下面的获取状态
+    // The pre-screening stage takes about 1 second in total, you can remove the status fetching below
     while (1) {
         auto ret = cli->getRobotInterface(robot_name)
                        ->getRobotAlgorithm()
                        ->payloadCalculateFinished();
         if (ret == 0) {
-            std::cout << "预筛选成功，轨迹点可用！" << std::endl;
+            std::cout << "Pre-screening succeeded, trajectory points are available!" << std::endl;
             return ret;
         } else if (ret == 1) {
-            std::cout << "正在预筛选..." << std::endl;
+            std::cout << "Pre-screening in progress..." << std::endl;
         } else {
-            std::cout << "预筛选失败，轨迹点不可用，ret=" << ret << std::endl;
+            std::cout << "Pre-screening failed, trajectory points are not available, ret=" << ret << std::endl;
             return ret;
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -193,7 +193,7 @@ void examplePayloadIdentify1(RpcClientPtr cli)
     std::vector<double> point3 = { -0.628319, 0.366519, 1.74533,
                                    -0.10472,  1.5708,   0.0 };
 
-    // 预筛选
+    // Pre-screening
     if (confirmPayloadIdentifyTraj(cli, point1, point2, point3) != 0) {
         exit(1);
     } else {
@@ -208,12 +208,12 @@ void examplePayloadIdentify1(RpcClientPtr cli)
                            ->getRobotAlgorithm()
                            ->payloadCalculateFinished();
             if (ret == 0) {
-                std::cout << "负载计算完成！" << std::endl;
+                std::cout << "Payload calculation completed!" << std::endl;
                 break;
             } else if (ret == 1) {
-                std::cout << "负载正在计算..." << std::endl;
+                std::cout << "Payload calculation in progress..." << std::endl;
             } else {
-                std::cout << "负载计算失败，ret=" << ret << std::endl;
+                std::cout << "Payload calculation failed, ret=" << ret << std::endl;
                 exit(-1);
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -221,7 +221,7 @@ void examplePayloadIdentify1(RpcClientPtr cli)
         auto result = cli->getRobotInterface(robot_name)
                           ->getRobotAlgorithm()
                           ->getPayloadIdentifyResult();
-        std::cout << "计算结果为:" << std::endl;
+        std::cout << "Calculation result:" << std::endl;
         std::cout << "mass: " << std::get<0>(result) << std::endl;
         std::cout << "com: " << std::get<1>(result) << std::endl;
         std::cout << "inertia: " << std::get<3>(result) << std::endl;
@@ -229,34 +229,34 @@ void examplePayloadIdentify1(RpcClientPtr cli)
 }
 
 /**
- * 功能: 负载辨识
- * 步骤:
- * 第一步: 连接到 RPC 服务、登录
- * 第二步: 机械臂上电
- * 第三步: 设置三个目标点
- * 第四步: 关节运动至目标点, 采集关节位置、关节速度、关节加速度、关节电流
- * 第五步: 计算辨识结果
+ * Function: Payload identification
+ * Steps:
+ * Step 1: Connect to RPC service and log in
+ * Step 2: Power on the robot arm
+ * Step 3: Set three target points
+ * Step 4: Move joints to target points, collect joint position, joint velocity, joint acceleration, joint current
+ * Step 5: Calculate identification result
  */
 #define LOCAL_IP "127.0.0.1"
 
 int main(int argc, char **argv)
 {
 #ifdef WIN32
-    // 将Windows控制台输出代码页设置为 UTF-8
+    // Set Windows console output code page to UTF-8
     SetConsoleOutputCP(CP_UTF8);
 #endif
 
     auto rpc_cli = std::make_shared<RpcClient>();
     rpc_cli->setRequestTimeout(1000);
-    // 接口调用: 连接到 RPC 服务
+    // API call: Connect to RPC service
     rpc_cli->connect(LOCAL_IP, 30004);
-    // 接口调用: 登录
+    // API call: Log in
     rpc_cli->login("aubo", "123456");
 
     auto rtde_cli = std::make_shared<RtdeClient>();
-    // 接口调用: 连接到 RTDE 服务
+    // API call: Connect to RTDE service
     rtde_cli->connect(LOCAL_IP, 30010);
-    // 接口调用: 登录
+    // API call: Log in
     rtde_cli->login("aubo", "123456");
 
     examplePayloadIdentify1(rpc_cli);

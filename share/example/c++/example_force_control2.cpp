@@ -15,17 +15,17 @@ using namespace arcs::common_interface;
 #endif
 #define EMBEDDED
 
-// 实现阻塞功能: 当机械臂运动到目标路点时，程序再往下执行
+// Implement blocking functionality: The program continues execution only after the robot arm reaches the target waypoint
 int waitArrival(RobotInterfacePtr impl)
 {
-    //接口调用: 获取当前的运动指令 ID
+    // API call: Get the current motion command ID
     int exec_id = impl->getMotionControl()->getExecId();
 
     int cnt = 0;
-    // 在等待机械臂开始运动时，获取exec_id最大的重试次数
+    // Maximum retry count for getting the largest exec_id while waiting for the robot arm to start moving
     int max_retry_count = 50;
 
-    // 等待机械臂开始运动
+    // Wait for the robot arm to start moving
     while (exec_id == -1) {
         if (cnt++ > max_retry_count) {
             return -1;
@@ -34,7 +34,7 @@ int waitArrival(RobotInterfacePtr impl)
         exec_id = impl->getMotionControl()->getExecId();
     }
 
-    // 等待机械臂动作完成
+    // Wait for the robot arm action to complete
     while (exec_id != -1) {
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
         exec_id = impl->getMotionControl()->getExecId();
@@ -43,12 +43,12 @@ int waitArrival(RobotInterfacePtr impl)
     return 0;
 }
 
-// 判断缓存是否有效
+// Check if the buffer is valid
 int isBufferValid(RobotInterfacePtr impl)
 {
-    // 调用pathBufferValid最大的重试次数
+    // Maximum retry count for calling pathBufferValid
     int max_retry_count = 50;
-    // 调用pathBufferValid的次数
+    // Number of times pathBufferValid is called
     int cnt = 0;
     bool isValid = impl->getMotionControl()->pathBufferValid("rec");
 
@@ -77,17 +77,17 @@ inline std::ostream &operator<<(std::ostream &os, const std::vector<T> &list)
 class TrajectoryIo
 {
 public:
-    // 构造函数，接受要打开的文件名作为参数
+    // Constructor, accepts the filename to open as a parameter
     TrajectoryIo(const char *filename)
     {
         input_file_.open(filename, std::ios::in);
     }
 
-    // 检查文件是否成功打开
+    // Check if the file was opened successfully
     bool open()
     {
         if (!input_file_.is_open()) {
-            std::cerr << "无法打开轨迹文件. 请检查输入的文件路径是否正确."
+            std::cerr << "Unable to open trajectory file. Please check if the input file path is correct."
                       << std::endl;
             return false;
         }
@@ -95,10 +95,10 @@ public:
     }
     ~TrajectoryIo() { input_file_.close(); }
 
-    // 解析文件中的轨迹数据，
-    // 并将其转换为一个二维的 std::vector。
-    // 它逐行读取文件内容，将每行数据解析为一组 double 数值，
-    // 并将这些数值存储在一个嵌套的二维向量中。
+    // Parse trajectory data from the file,
+    // and convert it into a two-dimensional std::vector.
+    // It reads the file line by line, parses each line into a set of double values,
+    // and stores these values in a nested two-dimensional vector.
     std::vector<std::vector<double>> parse()
     {
         std::vector<std::vector<double>> res;
@@ -118,15 +118,15 @@ public:
         return res;
     }
 
-    // 切割字符串并转换为 double 类型
+    // Split string and convert to double type
     std::vector<double> split(const std::string &str, const char *delim)
     {
         std::vector<double> res;
         if ("" == str) {
             return res;
         }
-        // 先将要切割的字符串从string类型转换为char*类型
-        char *strs = new char[str.length() + 1]; // 不要忘了
+        // First convert the string to char* type
+        char *strs = new char[str.length() + 1]; // Don't forget
         std::strcpy(strs, str.c_str());
 
         char *p = std::strtok(strs, delim);
@@ -138,7 +138,7 @@ public:
                 strs = nullptr;
                 throw p;
             }
-            res.push_back(v); // 存入结果数组
+            res.push_back(v); // Store in result array
             p = std::strtok(nullptr, delim);
         }
 
@@ -151,21 +151,21 @@ public:
     }
 
 private:
-    std::ifstream input_file_; // 输入文件流
+    std::ifstream input_file_; // Input file stream
 };
 
 void tcpSensorTest(RpcClientPtr cli)
 {
-    // 接口调用: 获取机器人的名字
+    // API call: Get the robot's name
     auto robot_name = cli->getRobotNames().front();
 #ifdef EMBEDDED
-    // 内置传感器
+    // Built-in sensor
     std::vector<double> sensor_pose = { 0, 0, 0, 0, 0, 0 };
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
         ->selectTcpForceSensor("embedded");
 #else
-    // 外置坤维传感器
+    // External KW sensor
     std::vector<double> sensor_pose = { 0, 0, 0.047, 0, 0, 0 };
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
@@ -198,24 +198,24 @@ void initFcParams(RpcClientPtr cli)
 {
     auto robot_name = cli->getRobotNames().front();
 #ifdef EMBEDDED
-    // 内置传感器
+    // Built-in sensor
     std::vector<double> sensor_pose = { 0, 0, 0, 0, 0, 0 };
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
         ->selectTcpForceSensor("embedded");
 #else
-    // 外置坤维传感器
+    // External KW sensor
     std::vector<double> sensor_pose = { 0, 0, 0.047, 0, 0, 0 };
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
         ->selectTcpForceSensor("kw_ftsensor");
 #endif
 
-    // 设置传感器安装位姿
+    // Set sensor installation pose
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
         ->setTcpForceSensorPose(sensor_pose);
-    // 设置TCP偏移
+    // Set TCP offset
     std::vector<double> tcp_pose = { 0, 0, 0.0, 0, 0, 0 };
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
@@ -224,18 +224,18 @@ void initFcParams(RpcClientPtr cli)
     double mass = 0.0;
     std::vector<double> com = { 0.0, 0.0, 0.0 };
 
-    // 力传感器偏移 需要根据实际情况设置
+    // Force sensor offset, needs to be set according to actual situation
     std::vector<double> force_offset = { 0.0, 0.0, -3.8, 0.0, 0.0, 0.0 };
-    // 设置负载
+    // Set payload
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
         ->setPayload(mass, com, { 0. }, { 0. });
-    // 设置力传感器偏移
+    // Set force sensor offset
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
         ->setTcpForceOffset(force_offset);
 
-    // 力控的m d k 参数, 需要根据环境调试
+    // Force control m d k parameters, need to be tuned according to environment
     std::vector<double> admittance_m = { 25.0, 25.0, 25.0, 2.0, 2.0, 2.0 };
     std::vector<double> admittance_d = {
         300.0, 300.0, 300.0, 12.0, 12.0, 12.0
@@ -262,26 +262,26 @@ void loadTraj(RpcClientPtr cli, std::vector<std::vector<double>> &traj)
 {
     auto robot_name = cli->getRobotNames().front();
     auto robot_interface = cli->getRobotInterface(robot_name);
-    // 接口调用: 清除缓存"rec"
+    // API call: Clear buffer "rec"
     robot_interface->getMotionControl()->pathBufferFree("rec");
     auto traj_sz = traj.size();
-    // 接口调用: 新建一个缓存"rec"，并指定轨迹运动类型和轨迹点数量
+    // API call: Create a new buffer "rec", specify trajectory motion type and number of trajectory points
     robot_interface->getMotionControl()->pathBufferAlloc("rec", 2, traj_sz);
 
-    // 将轨迹文件中的路点分组添加到路径缓存中，
-    // 以10个点为1组，
-    // 如果未添加的路点数量小于或者等于10时，则作为最后一组来添加
+    // Add waypoints from the trajectory file to the path buffer in groups,
+    // 10 points per group,
+    // if the number of remaining points is less than or equal to 10, add them as the last group
     size_t offset = 10;
     auto it = traj.begin();
     while (true) {
-        std::cout << "添加轨迹路点 " << offset << std::endl;
-        // 接口调用: 添加轨迹路点道缓存路径中
+        std::cout << "Adding trajectory waypoints " << offset << std::endl;
+        // API call: Add trajectory waypoints to the buffer path
         robot_interface->getMotionControl()->pathBufferAppend(
             "rec", std::vector<std::vector<double>>{ it, it + 10 });
         it += 10;
         if (offset + 10 >= traj_sz) {
-            std::cout << "添加轨迹路点 " << traj_sz << std::endl;
-            // 接口调用: 添加轨迹路点道缓存路径中
+            std::cout << "Adding trajectory waypoints " << traj_sz << std::endl;
+            // API call: Add trajectory waypoints to the buffer path
             robot_interface->getMotionControl()->pathBufferAppend(
                 "rec", std::vector<std::vector<double>>{ it, traj.end() });
             break;
@@ -290,11 +290,11 @@ void loadTraj(RpcClientPtr cli, std::vector<std::vector<double>> &traj)
         offset += 10;
     }
 
-    // 轨迹文件中的采样间隔
+    // Sampling interval in the trajectory file
     double interval = 0.05;
     //    double interval = 0.02;
 
-    // 接口调用: 计算、优化等耗时操作，来对轨迹进行优化
+    // API call: Perform time-consuming operations such as calculation and optimization to optimize the trajectory
     robot_interface->getMotionControl()->pathBufferEval("rec", {}, {},
                                                         interval);
 }
@@ -303,24 +303,24 @@ void example1(RpcClientPtr cli)
 {
     auto robot_name = cli->getRobotNames().front();
 #ifdef EMBEDDED
-    // 内置传感器
+    // Built-in sensor
     std::vector<double> sensor_pose = { 0, 0, 0, 0, 0, 0 };
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
         ->selectTcpForceSensor("embedded");
 #else
-    // 外置坤维传感器
+    // External KW sensor
     std::vector<double> sensor_pose = { 0, 0, 0.047, 0, 0, 0 };
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
         ->selectTcpForceSensor("kw_ftsensor");
 #endif
 
-    // 设置传感器安装位姿
+    // Set sensor installation pose
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
         ->setTcpForceSensorPose(sensor_pose);
-    // 设置TCP偏移
+    // Set TCP offset
     std::vector<double> tcp_pose = { 0, 0, 0.0, 0, 0, 0 };
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
@@ -328,14 +328,14 @@ void example1(RpcClientPtr cli)
 
     double mass = 0.0;
     std::vector<double> com = { 0.0, 0.0, 0.0 };
-    // 力传感器偏移需要根据实际情况设置
+    // Force sensor offset, needs to be set according to actual situation
     std::vector<double> force_offset = { 0, 0, -3.8, 0, 0, 0 };
-    // 设置负载
+    // Set payload
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
         ->setPayload(mass, com, { 0. }, { 0. });
 
-    // 设置力传感器偏移
+    // Set force sensor offset
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
         ->setTcpForceOffset(force_offset);
@@ -349,13 +349,13 @@ void example1(RpcClientPtr cli)
     cli->getRobotInterface("rob1")->getForceControl()->setDynamicModel(
         admittance_m, admittance_d, admittance_k);
 
-    // 力控开启方向
+    // Force control enabled directions
     std::vector<bool> compliance = { false, false, true, false, false, false };
-    // 目标力
+    // Target force
     std::vector<double> target_wrench{ 0.0, 0.0, -3.0, 0.0, 0.0, 0.0 };
     std::vector<double> speed_limits(6, 2.0);
 
-    // 力控参考坐标系设为FRAME_FORCE, 基于当前时刻的工具坐标系探寻
+    // Set force control reference frame to FRAME_FORCE, search based on current tool frame
     auto feature =
         cli->getRobotInterface(robot_name)->getRobotState()->getTcpPose();
     TaskFrameType frame_type = TaskFrameType::FRAME_FORCE;
@@ -364,8 +364,8 @@ void example1(RpcClientPtr cli)
         ->setTargetForce(feature, compliance, target_wrench, speed_limits,
                          frame_type);
 
-    // 设置监控探寻范围
-    // 探寻范围为box,用6个参数描述分别为: 单位米
+    // Set monitoring search range
+    // Search range is box, described by 6 parameters: unit meter
     // double xmin;
     // double xmax;
     // double ymin;
@@ -379,69 +379,69 @@ void example1(RpcClientPtr cli)
         ->getForceControl()
         ->setSupvPosBox(box_frame, box);
 
-    // 使能力控
+    // Enable admittance control
     cli->getRobotInterface(robot_name)->getForceControl()->fcEnable();
 }
 
 int example2(RpcClientPtr rpc)
 {
-    // 接口调用: 获取机器人的名字
+    // API call: Get the robot's name
     auto robot_name = rpc->getRobotNames().front();
 
     auto robot_interface = rpc->getRobotInterface(robot_name);
 
-    // 读取轨迹文件
+    // Read trajectory file
     auto filename = "../trajs/physiotherapy.txt";
     TrajectoryIo input(filename);
 
-    // 尝试打开轨迹文件，如果无法打开，直接返回
+    // Try to open trajectory file, return directly if unable to open
     if (!input.open()) {
         return -1;
     }
 
-    // 解析轨迹数据
+    // Parse trajectory data
     auto traj = input.parse();
-    // 检查轨迹文件中是否有路点，
-    // 如果数量为 0，输出错误消息并返回
+    // Check if there are waypoints in the trajectory file,
+    // if the number is 0, output error message and return
     auto traj_sz = traj.size();
     if (traj_sz == 0) {
-        std::cerr << "轨迹文件中的路点数量为0." << std::endl;
+        std::cerr << "Number of waypoints in trajectory file is 0." << std::endl;
         return -1;
     }
-    // 接口调用:
-    // 设置机械臂的速度比率
+    // API call:
+    // Set robot arm speed ratio
     robot_interface->getMotionControl()->setSpeedFraction(0.3);
 
-    // 接口调用: 关节运动到轨迹文件中的第一个路点
+    // API call: Move joints to the first waypoint in the trajectory file
     robot_interface->getMotionControl()->moveJoint(traj[0], 30 * (M_PI / 180),
                                                    30 * (M_PI / 180), 0., 0.);
-    // 阻塞
+    // Blocking
     int ret = waitArrival(robot_interface);
     if (ret == 0) {
-        std::cout << "关节运动到轨迹文件中的第一个路点成功" << std::endl;
+        std::cout << "Successfully moved joints to the first waypoint in the trajectory file" << std::endl;
     } else {
-        std::cout << "关节运动到轨迹文件中的第一个路点失败" << std::endl;
+        std::cout << "Failed to move joints to the first waypoint in the trajectory file" << std::endl;
     }
 
-    // 初始化力控参数
+    // Initialize force control parameters
     initFcParams(rpc);
     loadTraj(rpc, traj);
 
     if (isBufferValid(robot_interface) == -1) {
-        std::cerr << "路径缓存无效，无法进行轨迹运动" << std::endl;
+        std::cerr << "Path buffer is invalid, cannot perform trajectory motion" << std::endl;
     } else {
-        // 运行轨迹
+        // Run trajectory
         robot_interface->getMotionControl()->movePathBuffer("rec");
-        // 先运动在开力控
+        // Move first, then enable force control
         robot_interface->getForceControl()->fcEnable();
     }
 
-    // 等待轨迹运动完成
+    // Wait for trajectory motion to complete
     ret = waitArrival(robot_interface);
     if (ret == -1) {
-        std::cerr << "轨迹运动失败" << std::endl;
+        std::cerr << "Trajectory motion failed" << std::endl;
     } else {
-        std::cout << "轨迹运动结束" << std::endl;
+        std::cout << "Trajectory motion finished" << std::endl;
     }
 
     robot_interface->getMotionControl()->stopJoint(1);
@@ -452,23 +452,23 @@ int example2(RpcClientPtr rpc)
 int main(int argc, char **argv)
 {
 #ifdef WIN32
-    // 将Windows控制台输出代码页设置为 UTF-8
+    // Set Windows console output code page to UTF-8
     SetConsoleOutputCP(CP_UTF8);
 #endif
 
     auto rpc = std::make_shared<RpcClient>();
-    // 接口调用: 设置 RPC 超时
+    // API call: Set RPC timeout
     rpc->setRequestTimeout(1000);
-    // 接口调用: 连接到 RPC 服务
+    // API call: Connect to RPC service
     rpc->connect(LOCAL_IP, 30004);
-    // 接口调用: 登录
+    // API call: Login
     rpc->login("aubo", "123456");
 
-    /* 探寻例程 */
+    /* Search routine */
     // example1(rpc);
-    /* 轨迹+力控 */
+    /* Trajectory + force control */
     example2(rpc);
-    /* 测试力传感器数据 */
+    /* Test force sensor data */
     // tcpSensorTest(rpc);
     return 0;
 }

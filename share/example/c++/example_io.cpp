@@ -11,7 +11,7 @@ bool bit_value(uint64_t v, int index)
     return (v & ((uint64_t)1 << index)) ? true : false;
 }
 
-// 打印二进制位
+// Print binary bits
 void printBit(uint64_t v, std::string name, int bit_length)
 {
     std::cout << "@:" << name << std::endl;
@@ -22,506 +22,506 @@ void printBit(uint64_t v, std::string name, int bit_length)
     std::cout << std::endl;
 }
 
-// 数字输入——无触发动作
+// Digital input - no trigger action
 void exampleStandardDigitalInput1(RpcClientPtr cli)
 {
-    // 接口调用: 获取机器人的名字
+    // API call: Get the robot's name
     auto robot_name = cli->getRobotNames().front();
     auto robot = cli->getRobotInterface(robot_name);
 
-    // 接口调用: 获取数字输入数量
+    // API call: Get the number of digital inputs
     int di_num = robot->getIoControl()->getStandardDigitalInputNum();
-    std::cout << "数字输入数量: " << di_num << std::endl;
+    std::cout << "Number of digital inputs: " << di_num << std::endl;
 
-    // 接口调用: 设置所有的数字输入的动作为无触发
+    // API call: Set all digital input actions to no trigger
     robot->getIoControl()->setDigitalInputActionDefault();
 
-    // 打印所有的数字输入值
+    // Print all digital input values
     for (int i = 0; i < di_num; i++) {
-        // 接口调用: 获取数字输入值
+        // API call: Get digital input value
         auto input_value = robot->getIoControl()->getStandardDigitalInput(i);
-        std::cout << "管脚" << i << "数字输入值:" << input_value << std::endl;
+        std::cout << "Pin " << i << " digital input value: " << input_value << std::endl;
     }
 }
 
-// 数字输入——触发动作为拖动示教
+// Digital input - trigger action is handguiding
 void exampleStandardDigitalInput2(RpcClientPtr cli)
 {
-    // 接口调用: 获取机器人的名字
+    // API call: Get the robot's name
     auto robot_name = cli->getRobotNames().front();
     auto robot = cli->getRobotInterface(robot_name);
 
-    // 接口调用: 设置DI00的动作为拖动示教。
+    // API call: Set DI00 action to handguiding
     StandardInputAction input_action = StandardInputAction::Handguide;
     robot->getIoControl()->setStandardDigitalInputAction(0, input_action);
 
-    std::cout << "说明:当DI00为高电平(DI00和0V短接)时,机器人进入拖动示教。"
+    std::cout << "Note: When DI00 is high level (DI00 and 0V are shorted), the robot enters handguiding."
               << std::endl;
-    std::cout << "当DI00为低电平(DI00和0V断开)时,机器人退出拖动示教。"
+    std::cout << "When DI00 is low level (DI00 and 0V are disconnected), the robot exits handguiding."
               << std::endl;
 }
 
-// 数字输出——无触发动作，用户可设置输出值
+// Digital output - no trigger action, user can set output value
 void exampleStandardDigitalOutput1(RpcClientPtr cli)
 {
-    // 接口调用: 获取机器人的名字
+    // API call: Get the robot's name
     auto robot_name = cli->getRobotNames().front();
     auto robot = cli->getRobotInterface(robot_name);
 
-    // 接口调用: 获取数字输出数量
+    // API call: Get the number of digital outputs
     int do_num = robot->getIoControl()->getStandardDigitalOutputNum();
-    std::cout << "数字输出数量: " << do_num << std::endl;
+    std::cout << "Number of digital outputs: " << do_num << std::endl;
 
-    // 接口调用: 设置所有的数字输出的动作为无触发。
-    // 当数字输出的动作为无触发时，用户可设置数字输出值。
+    // API call: Set all digital output actions to no trigger.
+    // When the digital output action is no trigger, the user can set the digital output value.
     robot->getIoControl()->setDigitalOutputRunstateDefault();
 
-    // 接口调用: 设置DO00为高电平
+    // API call: Set DO00 to high level
     robot->getIoControl()->setStandardDigitalOutput(0, true);
 
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
-    // 接口调用: 获取DO00的值
+    // API call: Get the value of DO00
     bool value = robot->getIoControl()->getStandardDigitalOutput(0);
-    std::cout << "DO00的值:" << (value ? "高电平" : "低电平") << std::endl;
+    std::cout << "DO00 value: " << (value ? "High level" : "Low level") << std::endl;
 }
 
-// 数字输出——设置触发动作为拖动示教，控制器自动设置输出值
+// Digital output - set trigger action to handguiding, controller sets output value automatically
 void exampleStandardDigitalOutput2(RpcClientPtr cli)
 {
-    // 接口调用: 获取机器人的名字
+    // API call: Get the robot's name
     auto robot_name = cli->getRobotNames().front();
     auto robot = cli->getRobotInterface(robot_name);
 
-    // 接口调用: 获取数字输出数量
+    // API call: Get the number of digital outputs
     int do_num = robot->getIoControl()->getStandardDigitalOutputNum();
-    std::cout << "数字输出数量: " << do_num << std::endl;
+    std::cout << "Number of digital outputs: " << do_num << std::endl;
 
-    // 接口调用: 设置DO00的动作为拖动示教。
-    // 当机器人进入拖动示教时,DO00的值为高电平。
-    // 当机器人退出拖动示教时,DO00的值为低电平。
-    // 此时，用户不可设置DO00的值。
+    // API call: Set DO00 action to handguiding.
+    // When the robot enters handguiding, DO00 value is high level.
+    // When the robot exits handguiding, DO00 value is low level.
+    // At this time, the user cannot set the value of DO00.
     StandardOutputRunState runstate = StandardOutputRunState::Handguiding;
     robot->getIoControl()->setStandardDigitalOutputRunstate(0, runstate);
 
-    // 接口调用: 进入拖动示教
+    // API call: Enter handguiding
     robot->getRobotManage()->freedrive(true);
 
-    // 等待进入拖动示教模式
+    // Wait to enter handguiding mode
     int i = 0;
     while (robot->getRobotManage()->isFreedriveEnabled()) {
         if (i++ > 5) {
-            std::cerr << "拖动示教模式使能失败" << std::endl;
+            std::cerr << "Failed to enable handguiding mode" << std::endl;
             return;
         }
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
-    std::cout << "进入拖动示教成功" << std::endl;
+    std::cout << "Entered handguiding successfully" << std::endl;
 
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
-    // 接口调用: 获取DO00的值
+    // API call: Get the value of DO00
     bool value = robot->getIoControl()->getStandardDigitalOutput(0);
-    std::cout << "DO00的值:" << (value ? "高电平" : "低电平") << std::endl;
+    std::cout << "DO00 value: " << (value ? "High level" : "Low level") << std::endl;
 
     std::this_thread::sleep_for(std::chrono::seconds(3));
 
-    // 接口调用: 退出拖动示教
+    // API call: Exit handguiding
     robot->getRobotManage()->freedrive(false);
 
-    // 等待退出拖动示教模式
+    // Wait to exit handguiding mode
     i = 0;
     while (robot->getRobotManage()->isFreedriveEnabled()) {
         if (i++ > 5) {
-            std::cerr << "拖动示教模式失能失败" << std::endl;
+            std::cerr << "Failed to disable handguiding mode" << std::endl;
             return;
         }
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
-    std::cout << "退出拖动示教成功" << std::endl;
+    std::cout << "Exited handguiding successfully" << std::endl;
 
-    // 接口调用: 获取DO00的值
+    // API call: Get the value of DO00
     value = robot->getIoControl()->getStandardDigitalOutput(0);
-    std::cout << "DO00的值:" << (value ? "高电平" : "低电平") << std::endl;
+    std::cout << "DO00 value: " << (value ? "High level" : "Low level") << std::endl;
 }
 
-// 模拟输入
+// Analog input
 void exampleStandardAnalogInput(RpcClientPtr cli)
 {
-    // 接口调用: 获取机器人的名字
+    // API call: Get the robot's name
     auto robot_name = cli->getRobotNames().front();
     auto robot = cli->getRobotInterface(robot_name);
 
-    // 接口调用: 获取模拟输入数量
+    // API call: Get the number of analog inputs
     int ai_num = robot->getIoControl()->getStandardAnalogInputNum();
-    std::cout << "模拟输入数量: " << ai_num << std::endl;
+    std::cout << "Number of analog inputs: " << ai_num << std::endl;
 
-    // 打印所有的模拟输入值
+    // Print all analog input values
     for (int i = 0; i < ai_num; i++) {
-        // 接口调用: 获取模拟输入值
+        // API call: Get analog input value
         auto input_value = robot->getIoControl()->getStandardAnalogInput(i);
-        std::cout << "管脚" << i << "模拟输入值:" << input_value << std::endl;
+        std::cout << "Pin " << i << " analog input value: " << input_value << std::endl;
     }
 }
 
-// 模拟输出——无触发动作，用户设置输出值
+// Analog output - no trigger action, user sets output value
 void exampleStandardAnalogOutput1(RpcClientPtr cli)
 {
-    // 接口调用: 获取机器人的名字
+    // API call: Get the robot's name
     auto robot_name = cli->getRobotNames().front();
     auto robot = cli->getRobotInterface(robot_name);
 
-    // 接口调用: 获取标准模拟输出数量
+    // API call: Get the number of standard analog outputs
     int ao_num = robot->getIoControl()->getStandardAnalogOutputNum();
-    std::cout << "模拟输出数量: " << ao_num << std::endl;
+    std::cout << "Number of analog outputs: " << ao_num << std::endl;
 
-    // 接口调用：设置所有的模拟输出动作为无触发。
-    // 当模拟输出的动作为无触发时，用户可设置模拟输出值。
+    // API call: Set all analog output actions to no trigger.
+    // When the analog output action is no trigger, the user can set the analog output value.
     StandardOutputRunState output_runstate = StandardOutputRunState::None;
     for (int i = 0; i < ao_num; i++) {
         robot->getIoControl()->setStandardAnalogOutputRunstate(i,
                                                                output_runstate);
     }
 
-    // 接口调用: 设置AO0的输出电压为5V
+    // API call: Set AO0 output voltage to 5V
     double value = 5.0;
     robot->getIoControl()->setStandardAnalogOutput(0, value);
-    std::cout << "设置AO0的输出电压:" << value << " V" << std::endl;
+    std::cout << "Set AO0 output voltage: " << value << " V" << std::endl;
 
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
-    // 接口调用: 获取AO0的输出电压
+    // API call: Get AO0 output voltage
     value = robot->getIoControl()->getStandardAnalogOutput(0);
-    std::cout << "获取AO0的输出电压:" << value << " V" << std::endl;
+    std::cout << "Get AO0 output voltage: " << value << " V" << std::endl;
 }
 
-// 模拟输出——设置触发动作为拖动示教器时最大，控制器自动设置输出值
+// Analog output - set trigger action to maximum when handguiding, controller sets output value automatically
 void exampleStandardAnalogOutput2(RpcClientPtr cli)
 {
-    // 接口调用: 获取机器人的名字
+    // API call: Get the robot's name
     auto robot_name = cli->getRobotNames().front();
     auto robot = cli->getRobotInterface(robot_name);
 
-    // 接口调用: 获取标准模拟输出数量
+    // API call: Get the number of standard analog outputs
     int ao_num = robot->getIoControl()->getStandardAnalogOutputNum();
-    std::cout << "模拟输出数量: " << ao_num << std::endl;
+    std::cout << "Number of analog outputs: " << ao_num << std::endl;
 
-    // 接口调用：设置AO0的动作为拖动示教时最大
-    // 当机器人进入拖动示教时，AO0的值最大。
-    // 当机器人退出拖动示教时，AO0的值为0。
-    // 此时，用户不可设置AO0的值。
+    // API call: Set AO0 action to maximum when handguiding
+    // When the robot enters handguiding, AO0 value is maximum.
+    // When the robot exits handguiding, AO0 value is 0.
+    // At this time, the user cannot set the value of AO0.
     StandardOutputRunState output_runstate =
         StandardOutputRunState::Handguiding;
     robot->getIoControl()->setStandardAnalogOutputRunstate(0, output_runstate);
 
-    // 接口调用: 进入拖动示教
+    // API call: Enter handguiding
     robot->getRobotManage()->freedrive(true);
 
-    // 等待进入拖动示教模式
+    // Wait to enter handguiding mode
     int i = 0;
     while (robot->getRobotManage()->isFreedriveEnabled()) {
         if (i++ > 5) {
-            std::cerr << "拖动示教模式使能失败" << std::endl;
+            std::cerr << "Failed to enable handguiding mode" << std::endl;
             return;
         }
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
-    std::cout << "进入拖动示教成功" << std::endl;
+    std::cout << "Entered handguiding successfully" << std::endl;
 
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
-    // 接口调用: 获取AO0的输出电压
+    // API call: Get AO0 output voltage
     double value = robot->getIoControl()->getStandardAnalogOutput(0);
-    std::cout << "获取AO0的输出电压:" << value << " V" << std::endl;
+    std::cout << "Get AO0 output voltage: " << value << " V" << std::endl;
 
     std::this_thread::sleep_for(std::chrono::seconds(3));
 
-    // 接口调用: 退出拖动示教
+    // API call: Exit handguiding
     robot->getRobotManage()->freedrive(false);
 
-    // 等待退出拖动示教模式
+    // Wait to exit handguiding mode
     i = 0;
     while (robot->getRobotManage()->isFreedriveEnabled()) {
         if (i++ > 5) {
-            std::cerr << "拖动示教模式失能失败" << std::endl;
+            std::cerr << "Failed to disable handguiding mode" << std::endl;
             return;
         }
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
-    std::cout << "退出拖动示教成功" << std::endl;
+    std::cout << "Exited handguiding successfully" << std::endl;
 
-    // 接口调用: 获取AO0的输出电压
+    // API call: Get AO0 output voltage
     value = robot->getIoControl()->getStandardAnalogOutput(0);
-    std::cout << "获取AO0的输出电压:" << value << " V" << std::endl;
+    std::cout << "Get AO0 output voltage: " << value << " V" << std::endl;
 }
 
-// 工具数字输入——无触发动作
+// Tool digital input - no trigger action
 void exampleToolDigitalInput1(RpcClientPtr cli)
 {
-    // 接口调用: 获取机器人的名字
+    // API call: Get the robot's name
     auto robot_name = cli->getRobotNames().front();
     auto robot = cli->getRobotInterface(robot_name);
 
-    // 接口调用: 获取工具数字IO的数量，包含输入和输出
+    // API call: Get the number of tool digital IOs, including input and output
     int tool_io_num = robot->getIoControl()->getToolDigitalInputNum();
-    std::cout << "获取工具数字IO的数量(包含输入和输出)：" << tool_io_num
+    std::cout << "Get the number of tool digital IOs (including input and output): " << tool_io_num
               << std::endl;
 
-    // 接口调用: 设置TOOL_IO[0]为输入
+    // API call: Set TOOL_IO[0] as input
     bool isInput = true;
     robot->getIoControl()->setToolIoInput(0, isInput);
     std::this_thread::sleep_for(std::chrono::seconds(0));
-    std::cout << "设置TOOL_IO[0]的类型为:" << (isInput ? "输入" : "输出")
+    std::cout << "Set TOOL_IO[0] type to: " << (isInput ? "Input" : "Output")
               << std::endl;
 
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
-    // 接口调用: 获取TOOL_IO[0]的类型
+    // API call: Get TOOL_IO[0] type
     isInput = robot->getIoControl()->isToolIoInput(0);
-    std::cout << "获取TOOL_IO[0]的类型为:" << (isInput ? "输入" : "输出")
+    std::cout << "Get TOOL_IO[0] type: " << (isInput ? "Input" : "Output")
               << std::endl;
 
-    // 接口调用: 设置TOOL_IO[0]的动作为无触发
+    // API call: Set TOOL_IO[0] action to no trigger
     StandardInputAction input_action = StandardInputAction::Default;
     robot->getIoControl()->setToolDigitalInputAction(0, input_action);
 
-    // 接口调用: 获取TOOL_IO[0]的值
+    // API call: Get TOOL_IO[0] value
     bool value = robot->getIoControl()->getToolDigitalInput(0);
-    std::cout << "获取TOOL_IO[0]数字输入值:" << (value ? "高电平" : "低电平")
+    std::cout << "Get TOOL_IO[0] digital input value: " << (value ? "High level" : "Low level")
               << std::endl;
 }
 
-// 工具数字输入——触发动作为拖动示教
+// Tool digital input - trigger action is handguiding
 void exampleToolDigitalInput2(RpcClientPtr cli)
 {
-    // 接口调用: 获取机器人的名字
+    // API call: Get the robot's name
     auto robot_name = cli->getRobotNames().front();
     auto robot = cli->getRobotInterface(robot_name);
 
-    // 接口调用: 获取工具数字IO的数量，包含输入和输出
+    // API call: Get the number of tool digital IOs, including input and output
     int tool_io_num = robot->getIoControl()->getToolDigitalInputNum();
-    std::cout << "获取工具数字IO的数量(包含输入和输出)：" << tool_io_num
+    std::cout << "Get the number of tool digital IOs (including input and output): " << tool_io_num
               << std::endl;
 
-    // 接口调用: 设置TOOL_IO[0]为输入
+    // API call: Set TOOL_IO[0] as input
     bool isInput = true;
     robot->getIoControl()->setToolIoInput(0, isInput);
     std::this_thread::sleep_for(std::chrono::seconds(0));
-    std::cout << "设置TOOL_IO[0]的类型为:" << (isInput ? "输入" : "输出")
+    std::cout << "Set TOOL_IO[0] type to: " << (isInput ? "Input" : "Output")
               << std::endl;
 
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
-    // 接口调用: 获取TOOL_IO[0]的类型
+    // API call: Get TOOL_IO[0] type
     isInput = robot->getIoControl()->isToolIoInput(0);
-    std::cout << "获取TOOL_IO[0]的类型为:" << (isInput ? "输入" : "输出")
+    std::cout << "Get TOOL_IO[0] type: " << (isInput ? "Input" : "Output")
               << std::endl;
 
-    // 接口调用: 设置TOOL_IO[0]的动作为拖动示教
+    // API call: Set TOOL_IO[0] action to handguiding
     StandardInputAction input_action = StandardInputAction::Handguide;
     robot->getIoControl()->setToolDigitalInputAction(0, input_action);
 
-    std::cout << "说明:当TOOL_IO[0]为高电平(TOOL_IO[0]和GND短接)时,"
-                 "机器人进入拖动示教。"
+    std::cout << "Note: When TOOL_IO[0] is high level (TOOL_IO[0] and GND are shorted),"
+                 "the robot enters handguiding."
               << std::endl;
     std::cout
-        << "当TOOL_IO[0]为低电平(TOOL_IO[0]和GND断开)时,机器人退出拖动示教。"
+        << "When TOOL_IO[0] is low level (TOOL_IO[0] and GND are disconnected), the robot exits handguiding."
         << std::endl;
 }
 
-// 工具数字输出——无触发动作，用户设置输出值
+// Tool digital output - no trigger action, user sets output value
 void exampleToolDigitalOutput1(RpcClientPtr cli)
 {
-    // 接口调用: 获取机器人的名字
+    // API call: Get the robot's name
     auto robot_name = cli->getRobotNames().front();
     auto robot = cli->getRobotInterface(robot_name);
 
-    // 接口调用: 获取工具数字IO的数量，包含输入和输出
+    // API call: Get the number of tool digital IOs, including input and output
     int tool_io_num = robot->getIoControl()->getToolDigitalInputNum();
-    std::cout << "获取工具数字IO的数量(包含输入和输出)：" << tool_io_num
+    std::cout << "Get the number of tool digital IOs (including input and output): " << tool_io_num
               << std::endl;
 
-    // 接口调用: 设置TOOL_IO[0]为输出
+    // API call: Set TOOL_IO[0] as output
     bool isInput = false;
     robot->getIoControl()->setToolIoInput(0, isInput);
     std::this_thread::sleep_for(std::chrono::seconds(0));
-    std::cout << "设置TOOL_IO[0]的类型为:" << (isInput ? "输入" : "输出")
+    std::cout << "Set TOOL_IO[0] type to: " << (isInput ? "Input" : "Output")
               << std::endl;
 
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
-    // 接口调用: 获取TOOL_IO[0]的类型
+    // API call: Get TOOL_IO[0] type
     isInput = robot->getIoControl()->isToolIoInput(0);
-    std::cout << "获取TOOL_IO[0]的类型为:" << (isInput ? "输入" : "输出")
+    std::cout << "Get TOOL_IO[0] type: " << (isInput ? "Input" : "Output")
               << std::endl;
 
-    // 接口调用: 设置TOOL_IO[0]的动作为无触发
-    // 当工具数字输出的动作为无触发时，用户可设置工具数字输出值。
+    // API call: Set TOOL_IO[0] action to no trigger
+    // When the tool digital output action is no trigger, the user can set the tool digital output value.
     StandardOutputRunState output_runstate = StandardOutputRunState::None;
     robot->getIoControl()->setToolDigitalOutputRunstate(0, output_runstate);
 
-    // 接口调用: 设置TOOL_IO[0]为高电平
+    // API call: Set TOOL_IO[0] to high level
     bool value = true;
     robot->getIoControl()->setToolDigitalOutput(0, value);
-    std::cout << "设置TOOL_IO[0]的值:" << (value ? "高电平" : "低电平")
+    std::cout << "Set TOOL_IO[0] value: " << (value ? "High level" : "Low level")
               << std::endl;
 
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
-    // 接口调用: 获取TOOL_IO[0]的值
+    // API call: Get TOOL_IO[0] value
     value = robot->getIoControl()->getToolDigitalOutput(0);
-    std::cout << "获取TOOL_IO[0]的值:" << (value ? "高电平" : "低电平")
+    std::cout << "Get TOOL_IO[0] value: " << (value ? "High level" : "Low level")
               << std::endl;
 }
 
-// 工具数字输出——设置触发动作为拖动示教，控制器自动设置输出值
+// Tool digital output - set trigger action to handguiding, controller sets output value automatically
 void exampleToolDigitalOutput2(RpcClientPtr cli)
 {
-    // 接口调用: 获取机器人的名字
+    // API call: Get the robot's name
     auto robot_name = cli->getRobotNames().front();
     auto robot = cli->getRobotInterface(robot_name);
 
-    // 接口调用: 获取工具数字IO的数量，包含输入和输出
+    // API call: Get the number of tool digital IOs, including input and output
     int tool_io_num = robot->getIoControl()->getToolDigitalInputNum();
-    std::cout << "获取工具数字IO的数量(包含输入和输出)：" << tool_io_num
+    std::cout << "Get the number of tool digital IOs (including input and output): " << tool_io_num
               << std::endl;
 
-    // 接口调用: 设置TOOL_IO[0]为输出
+    // API call: Set TOOL_IO[0] as output
     bool isInput = false;
     robot->getIoControl()->setToolIoInput(0, isInput);
     std::this_thread::sleep_for(std::chrono::seconds(0));
-    std::cout << "设置TOOL_IO[0]的类型为:" << (isInput ? "输入" : "输出")
+    std::cout << "Set TOOL_IO[0] type to: " << (isInput ? "Input" : "Output")
               << std::endl;
 
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
-    // 接口调用: 获取TOOL_IO[0]的类型
+    // API call: Get TOOL_IO[0] type
     isInput = robot->getIoControl()->isToolIoInput(0);
-    std::cout << "获取TOOL_IO[0]的类型为:" << (isInput ? "输入" : "输出")
+    std::cout << "Get TOOL_IO[0] type: " << (isInput ? "Input" : "Output")
               << std::endl;
 
-    // 接口调用: 设置TOOL_IO[0]的动作为拖动示教。
-    // 当机器人进入拖动示教时，TOOL_IO[0]的值为高电平。
-    // 当机器人退出拖动示教时，TOOL_IO[0]的值为低电平。
-    // 此时，用户不可设置TOOL_IO[0]的值。
+    // API call: Set TOOL_IO[0] action to handguiding.
+    // When the robot enters handguiding, TOOL_IO[0] value is high level.
+    // When the robot exits handguiding, TOOL_IO[0] value is low level.
+    // At this time, the user cannot set the value of TOOL_IO[0].
     StandardOutputRunState output_runstate =
         StandardOutputRunState::Handguiding;
     robot->getIoControl()->setToolDigitalOutputRunstate(0, output_runstate);
 
-    // 接口调用: 进入拖动示教
+    // API call: Enter handguiding
     robot->getRobotManage()->freedrive(true);
 
-    // 等待进入拖动示教模式
+    // Wait to enter handguiding mode
     int i = 0;
     while (robot->getRobotManage()->isFreedriveEnabled()) {
         if (i++ > 5) {
-            std::cerr << "拖动示教模式使能失败" << std::endl;
+            std::cerr << "Failed to enable handguiding mode" << std::endl;
             return;
         }
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
-    std::cout << "进入拖动示教成功" << std::endl;
+    std::cout << "Entered handguiding successfully" << std::endl;
 
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
-    // 接口调用: 获取TOOL_IO[0]的值
+    // API call: Get TOOL_IO[0] value
     bool value = robot->getIoControl()->getToolDigitalOutput(0);
-    std::cout << "获取TOOL_IO[0]的值:" << (value ? "高电平" : "低电平")
+    std::cout << "Get TOOL_IO[0] value: " << (value ? "High level" : "Low level")
               << std::endl;
 
     std::this_thread::sleep_for(std::chrono::seconds(3));
 
-    // 接口调用: 退出拖动示教
+    // API call: Exit handguiding
     robot->getRobotManage()->freedrive(false);
 
-    // 等待退出拖动示教模式
+    // Wait to exit handguiding mode
     i = 0;
     while (robot->getRobotManage()->isFreedriveEnabled()) {
         if (i++ > 5) {
-            std::cerr << "拖动示教模式失能失败" << std::endl;
+            std::cerr << "Failed to disable handguiding mode" << std::endl;
             return;
         }
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
-    std::cout << "退出拖动示教成功" << std::endl;
+    std::cout << "Exited handguiding successfully" << std::endl;
 
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
-    // 接口调用: 获取TOOL_IO[0]的值
+    // API call: Get TOOL_IO[0] value
     value = robot->getIoControl()->getToolDigitalOutput(0);
-    std::cout << "获取TOOL_IO[0]的值:" << (value ? "高电平" : "低电平")
+    std::cout << "Get TOOL_IO[0] value: " << (value ? "High level" : "Low level")
               << std::endl;
 }
 
-// 工具模拟输入
+// Tool analog input
 void exampleToolAnalogInput(RpcClientPtr cli)
 {
-    // 接口调用: 获取机器人的名字
+    // API call: Get the robot's name
     auto robot_name = cli->getRobotNames().front();
     auto robot = cli->getRobotInterface(robot_name);
 
-    // 接口调用: 获取工具端模拟输入数量
+    // API call: Get the number of tool analog inputs
     int tool_ai_num = robot->getIoControl()->getToolAnalogInputNum();
-    std::cout << "工具端模拟输入数量: " << tool_ai_num << std::endl;
+    std::cout << "Number of tool analog inputs: " << tool_ai_num << std::endl;
 
-    // 接口调用: 获取所有工具模拟输入值
+    // API call: Get all tool analog input values
     for (int i = 0; i < tool_ai_num; i++) {
         double value = robot->getIoControl()->getToolAnalogInput(i);
-        std::cout << "TOOL_AI[" << i << "]的值:" << value << std::endl;
+        std::cout << "TOOL_AI[" << i << "] value: " << value << std::endl;
     }
 }
 
-// 安全IO
+// Safety IO
 void exampleSafetyIO(RpcClientPtr cli)
 {
-    // 接口调用: 获取机器人的名字
+    // API call: Get the robot's name
     auto robot_name = cli->getRobotNames().front();
     auto robot = cli->getRobotInterface(robot_name);
 
-    // 接口调用: 获取安全IO输入和输出数量
+    // API call: Get the number of safety IO inputs and outputs
     int safety_input_num =
         robot->getIoControl()->getConfigurableDigitalInputNum();
     int safety_output_num =
         robot->getIoControl()->getConfigurableDigitalOutputNum();
 
-    std::cout << "安全IO的输入数量: " << safety_input_num << std::endl;
-    std::cout << "安全IO的输出数量: " << safety_output_num << std::endl;
+    std::cout << "Number of safety IO inputs: " << safety_input_num << std::endl;
+    std::cout << "Number of safety IO outputs: " << safety_output_num << std::endl;
 
-    // 获取安全IO输入的值
+    // Get safety IO input values
     for (int i = 0; i < safety_input_num; i++) {
-        // 接口调用: 获取安全IO输入的值
+        // API call: Get safety IO input value
         auto value = robot->getIoControl()->getConfigurableDigitalInput(i);
-        std::cout << "管脚" << i << "安全IO输入的值:" << value << std::endl;
+        std::cout << "Pin " << i << " safety IO input value: " << value << std::endl;
     }
 
-    // 获取安全IO输出的值
+    // Get safety IO output values
     for (int i = 0; i < safety_output_num; i++) {
-        // 接口调用: 获取安全IO输出的值
+        // API call: Get safety IO output value
         auto value = robot->getIoControl()->getConfigurableDigitalOutput(i);
-        std::cout << "管脚" << i << "安全IO输出的值:" << value << std::endl;
+        std::cout << "Pin " << i << " safety IO output value: " << value << std::endl;
     }
 }
 
-// 联动IO
+// Static link IO
 void exampleStaticLinkIO(RpcClientPtr cli)
 {
-    // 接口调用: 获取机器人的名字
+    // API call: Get the robot's name
     auto robot_name = cli->getRobotNames().front();
     auto robot = cli->getRobotInterface(robot_name);
 
-    // 接口调用: 获取联动IO输入和输出数量
+    // API call: Get the number of static link IO inputs and outputs
     int link_input_num = robot->getIoControl()->getStaticLinkInputNum();
     int link_output_num = robot->getIoControl()->getStaticLinkOutputNum();
-    std::cout << "联动IO的输入数量: " << link_input_num << std::endl;
-    std::cout << "联动IO的输出数量: " << link_output_num << std::endl;
+    std::cout << "Number of static link IO inputs: " << link_input_num << std::endl;
+    std::cout << "Number of static link IO outputs: " << link_output_num << std::endl;
 
-    // 获取联动IO输入的值
+    // Get static link IO input values
     int input_value_decimal = robot->getIoControl()->getStaticLinkInputs();
-    printBit(input_value_decimal, "所有联动IO输入值", link_input_num);
+    printBit(input_value_decimal, "All static link IO input values", link_input_num);
 
-    // 获取联动IO输出的值
+    // Get static link IO output values
     int output_value_decimal = robot->getIoControl()->getStaticLinkOutputs();
-    printBit(output_value_decimal, "所有联动IO输出值", link_output_num);
+    printBit(output_value_decimal, "All static link IO output values", link_output_num);
 }
 
 #define LOCAL_IP "127.0.0.1"
@@ -529,62 +529,62 @@ void exampleStaticLinkIO(RpcClientPtr cli)
 int main(int argc, char **argv)
 {
 #ifdef WIN32
-    // 将Windows控制台输出代码页设置为 UTF-8
+    // Set Windows console output code page to UTF-8
     SetConsoleOutputCP(CP_UTF8);
 #endif
     auto rpc_cli = std::make_shared<RpcClient>();
-    // 接口调用: 设置 RPC 超时
+    // API call: Set RPC timeout
     rpc_cli->setRequestTimeout(1000);
-    // 接口调用: 连接到 RPC 服务
+    // API call: Connect to RPC service
     rpc_cli->connect(LOCAL_IP, 30004);
-    // 接口调用: 登录
+    // API call: Login
     rpc_cli->login("aubo", "123456");
 
-    // 数字输入——无触发动作
+    // Digital input - no trigger action
     exampleStandardDigitalInput1(rpc_cli);
 
-    //    // 数字输入——触发动作为拖动示教
+    //    // Digital input - trigger action is handguiding
     //    exampleStandardDigitalInput2(rpc_cli);
 
-    // 数字输出——无触发动作，用户设置输出值
+    // Digital output - no trigger action, user sets output value
     exampleStandardDigitalOutput1(rpc_cli);
 
-    //    // 数字输出——设置触发动作为拖动示教，控制器自动设置输出值
+    //    // Digital output - set trigger action to handguiding, controller sets output value automatically
     //    exampleStandardDigitalOutput2(rpc_cli);
 
-    // 模拟输入
+    // Analog input
     exampleStandardAnalogInput(rpc_cli);
 
-    // 模拟输出——无触发动作，用户设置输出值
+    // Analog output - no trigger action, user sets output value
     exampleStandardAnalogOutput1(rpc_cli);
 
-    //    // 模拟输出——设置触发动作为拖动示教器时最大，控制器自动设置输出值
+    //    // Analog output - set trigger action to maximum when handguiding, controller sets output value automatically
     //    exampleStandardAnalogOutput2(rpc_cli);
 
-    // 工具数字输入——无触发动作
+    // Tool digital input - no trigger action
     exampleToolDigitalInput1(rpc_cli);
 
-    //    // 工具数字输入——触发动作为拖动示教
+    //    // Tool digital input - trigger action is handguiding
     //    exampleToolDigitalInput2(rpc_cli);
 
-    // 工具数字输出——无触发动作，用户设置输出值
+    // Tool digital output - no trigger action, user sets output value
     exampleToolDigitalOutput1(rpc_cli);
 
-    //    // 工具数字输出——设置触发动作为拖动示教，控制器自动设置输出值
+    //    // Tool digital output - set trigger action to handguiding, controller sets output value automatically
     //    exampleToolDigitalOutput2(rpc_cli);
 
-    // 工具模拟输入
+    // Tool analog input
     exampleToolAnalogInput(rpc_cli);
 
-    // 安全IO
+    // Safety IO
     exampleSafetyIO(rpc_cli);
 
-    // 联动IO
+    // Static link IO
     exampleStaticLinkIO(rpc_cli);
 
-    // 接口调用: 退出登录
+    // API call: Logout
     rpc_cli->logout();
-    // 接口调用: 断开连接
+    // API call: Disconnect
     rpc_cli->disconnect();
 
     return 0;

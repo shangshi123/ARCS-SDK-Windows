@@ -24,17 +24,17 @@ std::mutex rtde_mtx_;
 bool cond_fullfiled_ = false;
 std::vector<double> tcp_pose_(6, 0.);
 std::vector<double> tcp_force_(6, 0.);
-// 实现阻塞功能: 当机械臂运动到目标路点时，程序再往下执行
+// Implement blocking: The program proceeds only after the robot reaches the target waypoint
 int waitArrival(RobotInterfacePtr impl)
 {
-    //接口调用: 获取当前的运动指令 ID
+    // API call: Get the current motion command ID
     int exec_id = impl->getMotionControl()->getExecId();
 
     int cnt = 0;
-    // 在等待机械臂开始运动时，获取exec_id最大的重试次数
+    // Maximum retry count to get exec_id while waiting for the robot to start moving
     int max_retry_count = 50;
 
-    // 等待机械臂开始运动
+    // Wait for the robot to start moving
     while (exec_id == -1) {
         if (cnt++ > max_retry_count) {
             return -1;
@@ -43,7 +43,7 @@ int waitArrival(RobotInterfacePtr impl)
         exec_id = impl->getMotionControl()->getExecId();
     }
 
-    // 等待机械臂动作完成
+    // Wait for the robot to finish moving
     while (exec_id != -1) {
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
         exec_id = impl->getMotionControl()->getExecId();
@@ -83,16 +83,16 @@ inline std::ostream &operator<<(std::ostream &os, const std::vector<T> &list)
 
 void tcpSensorTest(RpcClientPtr cli)
 {
-    // 接口调用: 获取机器人的名字
+    // API call: Get the robot's name
     auto robot_name = cli->getRobotNames().front();
 #ifdef EMBEDDED
-    // 内置传感器
+    // Built-in sensor
     std::vector<double> sensor_pose = { 0, 0, 0, 0, 0, 0 };
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
         ->selectTcpForceSensor("embedded");
 #else
-    // 外置坤维传感器
+    // External KW sensor
     std::vector<double> sensor_pose = { 0, 0, 0.047, 0, 0, 0 };
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
@@ -122,14 +122,14 @@ void tcpSensorTest(RpcClientPtr cli)
 }
 
 /**
- * @brief condFullfiled 判断力控终止条件是否满足
- * @param timeout 时间限制,如果时间超过timeout,条件未满足,则返回-1;
- *        如果timeout=-1,则不对时间进行限制
- * @param target_pose 到达目标点后,条件依然没有满足,则返回 0;
- *        如果target_pose={},则不对目标点进行判断
+ * @brief condFullfiled Determine whether the force control termination condition is met
+ * @param timeout Time limit. If time exceeds timeout and condition is not met, return -1;
+ *        If timeout=-1, no time limit is applied
+ * @param target_pose If the robot reaches the target point but the condition is not met, return 0;
+ *        If target_pose={}, target point is not checked
  *
- * @return 条件满足返回1;到位后条件不满足返回0;超时返回-1;
- *         若timeout=-1,target_pose={},该函数一直阻塞,直到满足条件后退出
+ * @return Returns 1 if condition is met; 0 if at position but condition not met; -1 if timeout;
+ *         If timeout=-1 and target_pose={}, this function blocks until the condition is met
  */
 int condFullfiled(double timeout, std::vector<double> target_pose)
 {
@@ -139,31 +139,31 @@ int condFullfiled(double timeout, std::vector<double> target_pose)
     while (!cond_fullfiled_) {
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
         if ((timeout > 0) && (cnt++ > timeout * 500)) {
-            std::cout << "条件等待超时 !" << std::endl;
+            std::cout << "Condition wait timeout!" << std::endl;
             ret = -1;
             break;
         }
         if ((target_pose.size() == 6) && equal(target_pose, tcp_pose_)) {
-            std::cout << "机械臂已到位 !" << std::endl;
+            std::cout << "Robot is in position!" << std::endl;
             ret = 0;
             break;
         }
     }
     if (cond_fullfiled_) {
-        // 条件满足, z方向探寻结束
+        // Condition met, Z direction search finished
         ret = 1;
     }
     return ret;
 }
 
 /**
- * @brief locateZ z方向定位
- * 通过判断z方向力的变化是否超过一定阈值，通过setCondForce实现
+ * @brief locateZ Z direction positioning
+ * Determines if the change in Z direction force exceeds a threshold using setCondForce
  * @param cli
  */
 int locateZ(RpcClientPtr cli)
 {
-    // 力控参数
+    // Force control parameters
     std::vector<double> locate_z_M = { 30.0, 30.0, 30.0, 10.0, 10.0, 10.0 };
     std::vector<double> locate_z_D = {
         300.0, 250.0, 200.0, 100.0, 100.0, 100.0
@@ -171,71 +171,71 @@ int locateZ(RpcClientPtr cli)
     std::vector<double> locate_z_K = {
         500.0, 500.0, 500.0, 100.0, 100.0, 100.0
     };
-    //力控开启方向
+    // Force control enabled directions
     std::vector<bool> locate_z_enable = {
         true, true, true, false, false, false
     };
-    // 目标力
+    // Target force
     std::vector<double> locate_z_goal_wrench = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-    // 探寻距离
+    // Search distance
     std::vector<double> seeking_distance = { 0.0, 0.0, -0.015, 0.0, 0.0, 0.0 };
-    // 力控坐标系选择 基坐标系
+    // Force control coordinate system selection: base frame
     std::vector<double> feature = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
     TaskFrameType frame_type = TaskFrameType::NONE;
-    // 力控速度限制
+    // Force control speed limits
     std::vector<double> speed_limits(6, 2.0);
-    // 末端力条件,INF为一个非常大的数值,[-INF,INF]可以认为范围非常大,忽略该方向的监控
+    // End effector force condition, INF is a very large value, [-INF,INF] means ignore monitoring for that direction
     std::vector<double> min_force = { -INF, -INF, -INF, -INF, -INF, -INF };
     std::vector<double> max_force = { INF, INF, 5.0, INF, INF, INF };
 
     auto robot_name = cli->getRobotNames().front();
-    // 设置力控参数
+    // Set force control parameters
     cli->getRobotInterface(robot_name)
         ->getForceControl()
         ->setDynamicModel(locate_z_M, locate_z_D, locate_z_K);
-    // 设置目标力
+    // Set target force
     cli->getRobotInterface(robot_name)
         ->getForceControl()
         ->setTargetForce(feature, locate_z_enable, locate_z_goal_wrench,
                          speed_limits, frame_type);
-    // 设置力的监控条件
+    // Set force monitoring condition
     double timeout = 1000;
     cli->getRobotInterface(robot_name)
         ->getForceControl()
         ->setCondForce(min_force, max_force, true, timeout);
-    // 获取当前tcp位置
+    // Get current TCP position
     auto current_pose =
         cli->getRobotInterface(robot_name)->getRobotState()->getTcpPose();
-    // 计算探寻终止位置
+    // Calculate search end position
     std::vector<double> target_pose(6, 0.);
     for (int i = 0; i < 6; i++) {
         target_pose[i] = current_pose[i] + seeking_distance[i];
     }
 
-    // 直线运动
+    // Linear motion
     double v = 0.0025, a = 4.0;
     cli->getRobotInterface(robot_name)
         ->getMotionControl()
         ->moveLine(target_pose, a, v, 0, 0);
-    // 开启力控
+    // Enable force control
     cli->getRobotInterface(robot_name)->getForceControl()->fcEnable();
     cli->getRobotInterface(robot_name)->getForceControl()->setCondActive();
     auto ret = condFullfiled(-1, target_pose);
     cli->getRobotInterface(robot_name)->getMotionControl()->stopJoint(1);
-    // 关闭力控
+    // Disable force control
     cli->getRobotInterface(robot_name)->getForceControl()->fcDisable();
 
     return ret;
 }
 
 /**
- * @brief insertDetect 判断螺栓是否插入孔中,前后动两次,两次全部接触认为插入孔中
+ * @brief insertDetect Detect whether the bolt is inserted into the hole; move forward and backward twice, both contacts mean inserted
  * @param cli
  * @return
  */
 int insertDetect(RpcClientPtr cli)
 {
-    // 力控参数
+    // Force control parameters
     std::vector<double> insert_detect_M = {
         30.0, 30.0, 30.0, 10.0, 10.0, 10.0
     };
@@ -244,25 +244,25 @@ int insertDetect(RpcClientPtr cli)
     std::vector<double> insert_detect_K = { 500.0, 500.0, 500.0,
                                             100.0, 100.0, 100.0 };
 
-    //力控开启方向
+    // Force control enabled directions
     std::vector<bool> insert_detect_enable = { true,  true,  false,
                                                false, false, false };
-    // 力控坐标系选择 基坐标系
+    // Force control coordinate system selection: base frame
     std::vector<double> feature = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
     TaskFrameType frame_type = TaskFrameType::NONE;
-    // 力控速度限制
+    // Force control speed limits
     std::vector<double> speed_limits(6, 2.0);
 
     auto robot_name = cli->getRobotNames().front();
-    // 设置力控参数
+    // Set force control parameters
     cli->getRobotInterface(robot_name)
         ->getForceControl()
         ->setDynamicModel(insert_detect_M, insert_detect_D, insert_detect_K);
 
-    // 目标力
+    // Target force
     std::vector<double> insert_detect_goal_wrench = { -8.0, 0.0, 0.0,
                                                       0.0,  0.0, 0.0 };
-    // 设置目标力
+    // Set target force
     cli->getRobotInterface(robot_name)
         ->getForceControl()
         ->setTargetForce(feature, insert_detect_enable,
@@ -284,46 +284,46 @@ int insertDetect(RpcClientPtr cli)
         ->getForceControl()
         ->setCondAdvanced("ConditionContactForce", args, timeout);
 
-    // 开启力控
+    // Enable force control
     cli->getRobotInterface(robot_name)->getForceControl()->fcEnable();
     cli->getRobotInterface(robot_name)->getForceControl()->setCondActive();
     auto ret = condFullfiled(3, {});
     if (ret < 0) {
         cli->getRobotInterface(robot_name)->getMotionControl()->stopJoint(1);
-        // 关闭力控
+        // Disable force control
         cli->getRobotInterface(robot_name)->getForceControl()->fcDisable();
         return ret;
     } else {
-        std::cout << "插入检测: 正向接触成功!" << std::endl;
+        std::cout << "Insertion detection: Forward contact successful!" << std::endl;
     }
-    // 目标力
+    // Target force
     insert_detect_goal_wrench = { 8.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-    // 开始反向接触
+    // Start reverse contact
     cli->getRobotInterface(robot_name)
         ->getForceControl()
         ->setTargetForce(feature, insert_detect_enable,
                          insert_detect_goal_wrench, speed_limits, frame_type);
     ret = condFullfiled(3, {});
     if (ret < 0) {
-        std::cout << "插入失败, 插入检测结束!" << std::endl;
+        std::cout << "Insertion failed, insertion detection finished!" << std::endl;
         return ret;
     } else {
-        std::cout << "插入检测: 反向接触成功!" << std::endl;
+        std::cout << "Insertion detection: Reverse contact successful!" << std::endl;
     }
     cli->getRobotInterface(robot_name)->getMotionControl()->stopJoint(1);
-    // 关闭力控
+    // Disable force control
     cli->getRobotInterface(robot_name)->getForceControl()->fcDisable();
     return ret;
 }
 
 /**
- * @brief locateXY 定位螺栓位置,在xy平面走螺旋轨迹
+ * @brief locateXY Locate bolt position, move in a spiral trajectory in the XY plane
  * @param cli
  * @return
  */
 int locateXY(RpcClientPtr cli)
 {
-    // 力控参数
+    // Force control parameters
     std::vector<double> locate_xy_M = { 30.0, 30.0, 30.0, 10.0, 10.0, 10.0 };
     std::vector<double> locate_xy_D = { 1000.0, 1000.0, 500.0,
                                         100.0,  100.0,  100.0 };
@@ -331,27 +331,27 @@ int locateXY(RpcClientPtr cli)
         500.0, 500.0, 500.0, 100.0, 100.0, 100.0
     };
 
-    //力控开启方向
+    // Force control enabled directions
     std::vector<bool> locate_xy_enable = {
         true, true, true, false, false, false
     };
-    // 目标力
+    // Target force
     std::vector<double> locate_xy_goal_wrench = {
         0.0, 0.0, 0.0, 0.0, 0.0, 0.0
     };
 
-    // 力控坐标系选择 基坐标系
+    // Force control coordinate system selection: base frame
     std::vector<double> feature = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
     TaskFrameType frame_type = TaskFrameType::NONE;
-    // 力控速度限制
+    // Force control speed limits
     std::vector<double> speed_limits(6, 2.0);
 
     auto robot_name = cli->getRobotNames().front();
-    // 设置力控参数
+    // Set force control parameters
     cli->getRobotInterface(robot_name)
         ->getForceControl()
         ->setDynamicModel(locate_xy_M, locate_xy_D, locate_xy_K);
-    // 设置目标力
+    // Set target force
     cli->getRobotInterface(robot_name)
         ->getForceControl()
         ->setTargetForce(feature, locate_xy_enable, locate_xy_goal_wrench,
@@ -384,45 +384,45 @@ int locateXY(RpcClientPtr cli)
         ->setCondAdvanced("ConditionContactForce", args_y, timeout);
 
     SpiralParameters spiral;
-    spiral.spiral = 0.001;       // 螺旋线步长
-    spiral.helix = 0.;           // 平面螺旋
-    spiral.angle = 5 * 2 * M_PI; // 旋转5圈
+    spiral.spiral = 0.001;       // Spiral step size
+    spiral.helix = 0.;           // Planar spiral
+    spiral.angle = 5 * 2 * M_PI; // Rotate 5 turns
     spiral.plane = 0;
-    double radius = 0.001; // 螺旋线第一圈半径
+    double radius = 0.001; // Spiral first circle radius
 
     spiral.frame =
         cli->getRobotInterface(robot_name)->getRobotState()->getTcpPose();
 
-    // 计算螺旋轨迹中心点
+    // Calculate spiral trajectory center point
     spiral.frame[0] =
-        std::sqrt(2) * radius / 2 + spiral.frame[0]; //计算螺旋线半径参考点
+        std::sqrt(2) * radius / 2 + spiral.frame[0]; // Calculate spiral radius reference point
     spiral.frame[1] = std::sqrt(2) * radius / 2 + spiral.frame[1];
     double v = 0.015, a = 0.2;
-    // 螺旋运动
+    // Spiral motion
     cli->getRobotInterface(robot_name)
         ->getMotionControl()
         ->moveSpiral(spiral, 0, v, a, 0);
-    // 开启力控
+    // Enable force control
     cli->getRobotInterface(robot_name)->getForceControl()->fcEnable();
-    // 激活终止条件
+    // Activate termination condition
     cli->getRobotInterface(robot_name)->getForceControl()->setCondActive();
     auto ret = condFullfiled(10, {});
     cli->getRobotInterface(robot_name)->getMotionControl()->stopJoint(1);
-    // 关闭力控
+    // Disable force control
     cli->getRobotInterface(robot_name)->getForceControl()->fcDisable();
     return ret;
 }
 
 /**
- * @brief calBoltPose 计算螺栓位置
+ * @brief calBoltPose Calculate bolt position
  * @param cli
- * @param bolt_len  螺栓长度
+ * @param bolt_len  Bolt length
  * @return
  */
 std::vector<double> calBoltPose(RpcClientPtr cli, double bolt_len)
 {
     double max_force = 8.0;
-    double diameter = 0.008; // 螺栓直径
+    double diameter = 0.008; // Bolt diameter
     auto robot_name = cli->getRobotNames().front();
     auto tcp_wrench =
         cli->getRobotInterface(robot_name)->getRobotState()->getTcpForce();
@@ -431,7 +431,7 @@ std::vector<double> calBoltPose(RpcClientPtr cli, double bolt_len)
 
     if ((fabs(tcp_wrench[0]) > max_force) &&
         (fabs(tcp_wrench[1]) < max_force)) {
-        // x方向力>limi，cht，y方向<limit,向x方向移动
+        // X direction force > limit, contact, Y direction < limit, move in X direction
         bolt_pose[0] =
             bolt_pose[0] - (tcp_wrench[0] / fabs(tcp_wrench[0])) * diameter;
 
@@ -439,13 +439,13 @@ std::vector<double> calBoltPose(RpcClientPtr cli, double bolt_len)
 
     else if ((fabs(tcp_wrench[0]) < max_force) &&
              (fabs(tcp_wrench[1]) > max_force)) {
-        // x方向力<limit，y方向>limit,向y方向移动
+        // X direction force < limit, Y direction > limit, move in Y direction
         bolt_pose[1] =
             bolt_pose[1] - (tcp_wrench[1] / fabs(tcp_wrench[1])) * diameter;
 
     } else if ((fabs(tcp_wrench[0]) > max_force) &&
                (fabs(tcp_wrench[1]) > max_force)) {
-        // x方向力>limit，y方向>limit,向xy复合方向移动
+        // X direction force > limit, Y direction > limit, move in XY composite direction
         double contact_force = std::sqrt(tcp_wrench[0] * tcp_wrench[0] +
                                          tcp_wrench[1] * tcp_wrench[1]);
         bolt_pose[0] =
@@ -458,39 +458,39 @@ std::vector<double> calBoltPose(RpcClientPtr cli, double bolt_len)
 }
 
 /**
- * @brief moveToBoltPose 移动到螺栓上方
+ * @brief moveToBoltPose Move above the bolt
  * @param cli
- * @param bolt_pose 螺栓位置
- * @param bolt_len  螺栓长度
+ * @param bolt_pose Bolt position
+ * @param bolt_len  Bolt length
  * @return
  */
 int moveToBoltPose(RpcClientPtr cli, std::vector<double> &bolt_pose,
                    double bolt_len)
 
 {
-    // 力控参数
+    // Force control parameters
     std::vector<double> move_M = { 30.0, 30.0, 30.0, 10.0, 10.0, 10.0 };
     std::vector<double> move_D = { 300.0, 250.0, 200.0, 100.0, 100.0, 100.0 };
     std::vector<double> move_K = { 500.0, 500.0, 500.0, 100.0, 100.0, 100.0 };
-    //力控开启方向
+    // Force control enabled directions
     std::vector<bool> move_fc_enable = {
         true, true, false, false, false, false
     };
-    // 目标力
+    // Target force
     std::vector<double> move_goal_wrench = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 
-    // 力控坐标系选择 基坐标系
+    // Force control coordinate system selection: base frame
     std::vector<double> feature = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
     TaskFrameType frame_type = TaskFrameType::NONE;
-    // 力控速度限制
+    // Force control speed limits
     std::vector<double> speed_limits(6, 2.0);
 
     auto robot_name = cli->getRobotNames().front();
-    // 设置力控参数
+    // Set force control parameters
     cli->getRobotInterface(robot_name)
         ->getForceControl()
         ->setDynamicModel(move_M, move_D, move_K);
-    // 设置目标力
+    // Set target force
     cli->getRobotInterface(robot_name)
         ->getForceControl()
         ->setTargetForce(feature, move_fc_enable, move_goal_wrench,
@@ -499,27 +499,27 @@ int moveToBoltPose(RpcClientPtr cli, std::vector<double> &bolt_pose,
     std::vector<double> trans_pose =
         cli->getRobotInterface(robot_name)->getRobotState()->getTcpPose();
     trans_pose[2] = trans_pose[2] + bolt_len;
-    // 移动至过渡点
+    // Move to transition point
     cli->getRobotInterface(robot_name)
         ->getMotionControl()
         ->moveLine(trans_pose, a, v, 0, 0);
 
-    // 先调用运动接口,在开启力控
+    // Call motion API first, then enable force control
     cli->getRobotInterface(robot_name)->getForceControl()->fcEnable();
     waitArrival(cli->getRobotInterface(robot_name));
-    // 移动至螺栓上方
+    // Move above the bolt
     cli->getRobotInterface(robot_name)
         ->getMotionControl()
         ->moveLine(bolt_pose, a, v, 0, 0);
     waitArrival(cli->getRobotInterface(robot_name));
     cli->getRobotInterface(robot_name)->getMotionControl()->stopJoint(1);
-    // 关闭力控
+    // Disable force control
     cli->getRobotInterface(robot_name)->getForceControl()->fcDisable();
     return 0;
 }
 
 /**
- * @brief seekZ z方向探寻, 在螺栓上方,向下探寻
+ * @brief seekZ Z direction search, move down above the bolt
  * @return
  */
 /*
@@ -534,19 +534,19 @@ int seekZ(RpcClientPtr cli)
     std::vector<double> seek_goal_wrench = { 0.0, 0.0, 5.0, 0.0, 0.0, 0.0 };
     std::vector<double> seek_force_threshold = { 1.0, 1.0, 1.0, 0.1, 0.1, 0.1 };
 
-    // 力控坐标系选择 基坐标系
+    // Force control coordinate system selection: base frame
     std::vector<double> feature = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
     TaskFrameType frame_type = TaskFrameType::NONE;
-    // 力控速度限制
+    // Force control speed limits
     std::vector<double> speed_limits(6, 2.0);
 
     auto robot_name = cli->getRobotNames().front();
-    // 设置力控参数
+    // Set force control parameters
     cli->getRobotInterface(robot_name)
         ->getForceControl()
         ->setDynamicModel(seek_M, seek_D, seek_K);
 
-    // 设置目标力
+    // Set target force
     cli->getRobotInterface(robot_name)
         ->getForceControl()
         ->setTargetForce(feature, seek_fc_enable, seek_goal_wrench,
@@ -568,16 +568,16 @@ int seekZ(RpcClientPtr cli)
         ->getForceControl()
         ->setCondAdvanced("ConditionContactForce", args, timeout);
     cli->getRobotInterface(robot_name)->getForceControl()->fcEnable();
-    // 激活终止条件
+    // Activate termination condition
     cli->getRobotInterface(robot_name)->getForceControl()->setCondActive();
     auto ret = condFullfiled(5, {});
     if (ret < 0) {
-        std::cout << "z方向探寻失败, 未找到螺栓!" << std::endl;
+        std::cout << "Z direction search failed, bolt not found!" << std::endl;
     } else {
-        std::cout << "z方向探寻成功!" << std::endl;
+        std::cout << "Z direction search successful!" << std::endl;
     }
     cli->getRobotInterface(robot_name)->getMotionControl()->stopJoint(1);
-    // 关闭力控
+    // Disable force control
     cli->getRobotInterface(robot_name)->getForceControl()->fcDisable();
     return ret;
 }
@@ -593,19 +593,19 @@ int searchXY(RpcClientPtr cli)
     };
     std::vector<double> search_goal_wrench = { 0.0, 0.0, 8.5, 0.0, 0.0, 0.0 };
 
-    // 力控坐标系选择 基坐标系
+    // Force control coordinate system selection: base frame
     std::vector<double> feature = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
     TaskFrameType frame_type = TaskFrameType::NONE;
-    // 力控速度限制
+    // Force control speed limits
     std::vector<double> speed_limits(6, 2.0);
 
     auto robot_name = cli->getRobotNames().front();
-    // 设置力控参数
+    // Set force control parameters
     cli->getRobotInterface(robot_name)
         ->getForceControl()
         ->setDynamicModel(search_M, search_D, search_K);
 
-    // 设置目标力
+    // Set target force
     cli->getRobotInterface(robot_name)
         ->getForceControl()
         ->setTargetForce(feature, search_fc_enable, search_goal_wrench,
@@ -623,40 +623,40 @@ int searchXY(RpcClientPtr cli)
     args_x.insert(args_x.end(), select.begin(), select.end());
     args_x.insert(args_x.end(), count);
     args_x.insert(args_x.end(), outside);
-    // z方向受力突然变小,认为搜到螺孔
+    // Z direction force suddenly decreases, considered as finding the screw hole
     cli->getRobotInterface(robot_name)
         ->getForceControl()
         ->setCondAdvanced("ConditionContactForce", args_x, timeout);
-    // 下探2mm,认为搜到螺孔
+    // Move down 2mm, considered as finding the screw hole
     cli->getRobotInterface(robot_name)
         ->getForceControl()
         ->setCondDistance(0.002, -1);
     SpiralParameters spiral;
-    spiral.spiral = 0.001;       // 螺旋线步长
-    spiral.helix = 0.;           // 平面螺旋
-    spiral.angle = 7 * 2 * M_PI; // 旋转5圈
+    spiral.spiral = 0.001;       // Spiral step size
+    spiral.helix = 0.;           // Planar spiral
+    spiral.angle = 7 * 2 * M_PI; // Rotate 5 turns
     spiral.plane = 0;
-    double radius = 0.001; // 螺旋线第一圈半径
+    double radius = 0.001; // Spiral first circle radius
 
     spiral.frame =
         cli->getRobotInterface(robot_name)->getRobotState()->getTcpPose();
-    // 计算螺旋轨迹中心点
+    // Calculate spiral trajectory center point
     spiral.frame[0] =
-        std::sqrt(2) * radius / 2 + spiral.frame[0]; //计算螺旋线半径参考点
+        std::sqrt(2) * radius / 2 + spiral.frame[0]; // Calculate spiral radius reference point
     spiral.frame[1] = std::sqrt(2) * radius / 2 + spiral.frame[1];
     double v = 0.002, a = 0.1;
-    // 螺旋运动
+    // Spiral motion
     cli->getRobotInterface(robot_name)
         ->getMotionControl()
         ->moveSpiral(spiral, 0, v, a, 0);
-    // 开启力控
+    // Enable force control
     cli->getRobotInterface(robot_name)->getForceControl()->fcEnable();
-    // 激活终止条件
+    // Activate termination condition
     cli->getRobotInterface(robot_name)->getForceControl()->setCondActive();
 
     auto ret = condFullfiled(60, {});
     cli->getRobotInterface(robot_name)->getMotionControl()->stopJoint(1);
-    // 关闭力控
+    // Disable force control
     cli->getRobotInterface(robot_name)->getForceControl()->fcDisable();
     return ret;
 }
@@ -669,24 +669,24 @@ int insertZ(RpcClientPtr cli)
     std::vector<bool> insert_fc_enable = { true, true, true, true, true, true };
     std::vector<double> insert_goal_wrench = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
     std::vector<double> insert_depth = { 0.0, 0.0, -0.01, 0.0, 0.0, 0.0 };
-    // 力控坐标系选择 基坐标系
+    // Force control coordinate system selection: base frame
     std::vector<double> feature = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
     TaskFrameType frame_type = TaskFrameType::NONE;
-    // 力控速度限制
+    // Force control speed limits
     std::vector<double> speed_limits(6, 2.0);
 
     auto robot_name = cli->getRobotNames().front();
-    // 设置力控参数
+    // Set force control parameters
     cli->getRobotInterface(robot_name)
         ->getForceControl()
         ->setDynamicModel(insert_M, insert_D, insert_K);
 
-    // 设置目标力
+    // Set target force
     cli->getRobotInterface(robot_name)
         ->getForceControl()
         ->setTargetForce(feature, insert_fc_enable, insert_goal_wrench,
                          speed_limits, frame_type);
-    // 获取当前tcp位置
+    // Get current TCP position
     auto current_pose =
         cli->getRobotInterface(robot_name)->getRobotState()->getTcpPose();
 
@@ -697,26 +697,26 @@ int insertZ(RpcClientPtr cli)
     cli->getRobotInterface(robot_name)
         ->getForceControl()
         ->setCondCylinder(cylinder_center, radius_, true, -1);
-    // 计算插入终止位置
+    // Calculate insertion end position
     std::vector<double> target_pose(6, 0.);
     for (int i = 0; i < 6; i++) {
         target_pose[i] = current_pose[i] + insert_depth[i];
     }
-    // 直线运动
+    // Linear motion
     double v = 0.0025, a = 4.0;
     cli->getRobotInterface(robot_name)
         ->getMotionControl()
         ->moveLine(target_pose, a, v, 0, 0);
 
-    // 开启力控
+    // Enable force control
     cli->getRobotInterface(robot_name)->getForceControl()->fcEnable();
-    // 激活终止条件
+    // Activate termination condition
     cli->getRobotInterface(robot_name)->getForceControl()->setCondActive();
 
     auto ret = condFullfiled(5, target_pose);
 
     cli->getRobotInterface(robot_name)->getMotionControl()->stopJoint(1);
-    // 关闭力控
+    // Disable force control
     cli->getRobotInterface(robot_name)->getForceControl()->fcDisable();
     return ret;
 }
@@ -725,24 +725,24 @@ int example(RpcClientPtr cli)
 {
     auto robot_name = cli->getRobotNames().front();
 #ifdef EMBEDDED
-    // 内置传感器
+    // Built-in sensor
     std::vector<double> sensor_pose = { 0, 0, 0, 0, 0, 0 };
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
         ->selectTcpForceSensor("embedded");
 #else
-    // 外置坤维传感器
+    // External KW sensor
     std::vector<double> sensor_pose = { 0, 0, 0.047, 0, 0, 0 };
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
         ->selectTcpForceSensor("kw_ftsensor");
 #endif
 
-    // 设置传感器安装位姿
+    // Set sensor installation pose
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
         ->setTcpForceSensorPose(sensor_pose);
-    // 设置TCP偏移
+    // Set TCP offset
     std::vector<double> tcp_pose = { 0, 0, 0.04, 0, 0, 0 };
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
@@ -750,15 +750,15 @@ int example(RpcClientPtr cli)
 
     double mass = 0.542767;
     std::vector<double> com = { 0.00650296, -0.000310792, 0.0199925 };
-    // 力传感器偏移需要根据实际情况设置
+    // Force sensor offset needs to be set according to actual situation
     std::vector<double> force_offset = { 13.0463,  -11.9162, -33.9405,
                                          0.168684, -1.07947, 0.403233 };
-    // 设置负载
+    // Set payload
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
         ->setPayload(mass, com, { 0. }, { 0. });
 
-    // 设置力传感器偏移
+    // Set force sensor offset
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
         ->setTcpForceOffset(force_offset);
@@ -772,23 +772,23 @@ int example(RpcClientPtr cli)
         ->moveJoint(q, 20.0 / 180.0 * M_PI, 20.0 / 180.0 * M_PI, 0.0, 0.0);
     waitArrival(cli->getRobotInterface(robot_name));
 
-    // 两次重试机会
+    // Two retry opportunities
     for (int i = 0; i < 2; i++) {
         if (locateZ(cli) > 0) {
-            std::cout << "定位到螺栓,开始xy平面搜索螺孔位置" << std::endl;
+            std::cout << "Bolt located, start searching for screw hole position in XY plane" << std::endl;
             if (searchXY(cli) > 0) {
-                std::cout << "条件满足, 确认是否插入" << std::endl;
+                std::cout << "Condition met, confirm insertion" << std::endl;
                 if (insertDetect(cli) > 0) {
-                    std::cout << "检测到已插入, 开始插入动作" << std::endl;
+                    std::cout << "Insertion detected, start insertion action" << std::endl;
                     if (insertZ(cli) < 0) {
-                        std::cout << "插入超时,请检查是否插入,或调整等待时间"
+                        std::cout << "Insertion timeout, please check if inserted or adjust wait time"
                                   << std::endl;
                     } else {
-                        std::cout << "插入已完成,结束程序" << std::endl;
+                        std::cout << "Insertion completed, end program" << std::endl;
                     }
                     return 0;
                 } else {
-                    std::cout << "检测到未插入,可能插入孔外, 回到起点"
+                    std::cout << "Not inserted, possibly outside the hole, return to start"
                               << std::endl;
                     cli->getRobotInterface(robot_name)
                         ->getMotionControl()
@@ -798,7 +798,7 @@ int example(RpcClientPtr cli)
                     continue;
                 }
             } else {
-                std::cout << "搜索超时, 退出搜索, 回到起点" << std::endl;
+                std::cout << "Search timeout, exit search, return to start" << std::endl;
                 cli->getRobotInterface(robot_name)
                     ->getMotionControl()
                     ->moveJoint(q, 20.0 / 180.0 * M_PI, 20.0 / 180.0 * M_PI,
@@ -807,22 +807,22 @@ int example(RpcClientPtr cli)
                 continue;
             }
         } else {
-            std::cout << "探寻距离已到, 未定位到螺栓, 确认是否插入"
+            std::cout << "Search distance reached, bolt not located, confirm insertion"
                       << std::endl;
             if (insertDetect(cli) > 0) {
-                std::cout << "检测到已插入, 开始插入动作" << std::endl;
+                std::cout << "Insertion detected, start insertion action" << std::endl;
                 if (insertZ(cli) < 0) {
-                    std::cout << "插入超时, 请检查是否插入, 或调整等待时间"
+                    std::cout << "Insertion timeout, please check if inserted or adjust wait time"
                               << std::endl;
                 } else {
-                    std::cout << "插入已完成, 结束程序" << std::endl;
+                    std::cout << "Insertion completed, end program" << std::endl;
                 }
                 return 0;
             } else {
-                std::cout << "检测到未插入, 开始xy平面定位螺栓位置"
+                std::cout << "Not inserted, start XY plane bolt positioning"
                           << std::endl;
                 if (locateXY(cli) < 0) {
-                    std::cout << "搜索超时, 未定位到螺栓, 结束搜索,回到起点"
+                    std::cout << "Search timeout, bolt not located, end search, return to start"
                               << std::endl;
                     cli->getRobotInterface(robot_name)
                         ->getMotionControl()
@@ -832,55 +832,12 @@ int example(RpcClientPtr cli)
                     continue;
                 } else {
                     auto bolt_pose = calBoltPose(cli, 0.015);
-                    std::cout << "定位到螺栓, 螺栓位置为: " << bolt_pose
+                    std::cout << "Bolt located, position: " << bolt_pose
                               << std::endl;
                     moveToBoltPose(cli, bolt_pose, 0.015);
-                    std::cout << "移动到螺栓上方" << std::endl;
+                    std::cout << "Moved above the bolt" << std::endl;
                 }
             }
         }
     }
-}
-
-#define LOCAL_IP "172.16.3.68"
-
-int main(int argc, char **argv)
-{
-#ifdef WIN32
-    // 将Windows控制台输出代码页设置为 UTF-8
-    SetConsoleOutputCP(CP_UTF8);
-#endif
-
-    auto rpc = std::make_shared<RpcClient>();
-    // 接口调用: 设置 RPC 超时
-    rpc->setRequestTimeout(1000);
-    // 接口调用: 连接到 RPC 服务
-    rpc->connect(LOCAL_IP, 30004);
-    // 接口调用: 登录
-    rpc->login("aubo", "123456");
-
-    auto rtde_cli = std::make_shared<RtdeClient>();
-    // 接口调用: 连接到 RTDE 服务
-    rtde_cli->connect(LOCAL_IP, 30010);
-    // 接口调用: 登录
-    rtde_cli->login("aubo", "123456");
-
-    // 接口调用: 设置话题, 力控条件,tcp位置,tcp力
-    int topic = rtde_cli->setTopic(
-        false,
-        { "R1_fc_cond_fullfiled", "R1_actual_TCP_pose", "R1_actual_TCP_force" },
-        200, 1);
-    // 接口调用: 订阅
-    rtde_cli->subscribe(topic, [](InputParser &parser) {
-        std::unique_lock<std::mutex> lck(rtde_mtx_);
-        cond_fullfiled_ = parser.popBool();
-        tcp_pose_ = parser.popVectorDouble();
-        tcp_force_ = parser.popVectorDouble();
-    });
-
-    example(rpc);
-
-    /* 测试力传感器数据 */
-    // tcpSensorTest(rpc);
-    return 0;
 }

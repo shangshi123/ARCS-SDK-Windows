@@ -13,7 +13,7 @@ using namespace arcs::aubo_sdk;
 #define EMBEDDED
 std::ofstream file("force.csv", std::ios::app);
 
-// 实现阻塞功能: 当机械臂运动到目标路点时，程序再往下执行
+// Implement blocking functionality: The program continues only after the robot reaches the target waypoint
 int waitArrival(RobotInterfacePtr impl)
 {
     int cnt = 0;
@@ -47,7 +47,7 @@ inline std::ostream &operator<<(std::ostream &os, const std::vector<T> &list)
     return os;
 }
 
-// 计算两点之间的欧氏距离，默认第二点为原点
+// Calculate Euclidean distance between two points, default second point is origin
 inline double calculateDistance(
     const std::vector<double> &p1,
     const std::vector<double> &p2 = std::vector<double>(6, 0))
@@ -62,19 +62,19 @@ inline double calculateDistance(
     return 0;
 }
 
-// 读取力传感器数据并保存到force.csv文件中
+// Read force sensor data and save to force.csv file
 void tcpSensorTest(RpcClientPtr cli)
 {
-    // 接口调用: 获取机器人的名字
+    // API call: Get robot name
     auto robot_name = cli->getRobotNames().front();
 #ifdef EMBEDDED
-    // 设置力传感器类型为内置传感器
+    // Set force sensor type to embedded sensor
     std::vector<double> sensor_pose = { 0, 0, 0, 0, 0, 0 };
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
         ->selectTcpForceSensor("embedded");
 #else
-    // 设置力传感器类型为外置坤维传感器
+    // Set force sensor type to external KW sensor
     std::vector<double> sensor_pose = { 0, 0, 0.047, 0, 0, 0 };
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
@@ -87,7 +87,7 @@ void tcpSensorTest(RpcClientPtr cli)
 
         std::cout << "--------------------------------------" << std::endl;
         for (int i = 0; i < sensor_data.size(); i++) {
-            std::cout << "获取TCP力传感器读数: " << i + 1 << ": "
+            std::cout << "Get TCP force sensor reading: " << i + 1 << ": "
                       << sensor_data[i] << std::endl;
         }
         std::cout << "--------------------------------------" << std::endl;
@@ -96,23 +96,23 @@ void tcpSensorTest(RpcClientPtr cli)
     }
 }
 
-// 力传感器标定
+// Force sensor calibration
 ForceSensorCalibResult tcpSensorcalibration(
     RpcClientPtr cli, std::vector<std::vector<double>> joints)
 {
     auto robot_name = cli->getRobotNames().front();
 
     printf("goto p0\n");
-    // 关节运动到负载辨识的第一个参考点
+    // Move joints to the first reference point for load identification
     cli->getRobotInterface(robot_name)
         ->getMotionControl()
         ->moveJoint(joints[0], 10 * (M_PI / 180), 5 * (M_PI / 180), 0, 0);
-    // 阻塞
+    // Blocking
     waitArrival(cli->getRobotInterface(robot_name));
-    // 等待机器人停稳
+    // Wait for robot to stabilize
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
-    // 记录第一个参考点的关节位置和TCP力传感器数据
+    // Record joint position and TCP force sensor data at the first reference point
     auto q1 = cli->getRobotInterface(robot_name)
                   ->getRobotState()
                   ->getJointPositions();
@@ -121,16 +121,16 @@ ForceSensorCalibResult tcpSensorcalibration(
                           ->getTcpForceSensors();
 
     printf("goto p1\n");
-    // 关节运动到负载辨识的第二个参考点
+    // Move joints to the second reference point for load identification
     cli->getRobotInterface(robot_name)
         ->getMotionControl()
         ->moveJoint(joints[1], 20 * (M_PI / 180), 10 * (M_PI / 180), 0, 0);
-    // 阻塞
+    // Blocking
     waitArrival(cli->getRobotInterface(robot_name));
-    // 等待机器人停稳
+    // Wait for robot to stabilize
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
-    // 记录第二个参考点的关节位置和TCP力传感器数据
+    // Record joint position and TCP force sensor data at the second reference point
     auto q2 = cli->getRobotInterface(robot_name)
                   ->getRobotState()
                   ->getJointPositions();
@@ -139,16 +139,16 @@ ForceSensorCalibResult tcpSensorcalibration(
                           ->getTcpForceSensors();
 
     printf("goto p2\n");
-    // 关节运动到负载辨识的第三个参考点
+    // Move joints to the third reference point for load identification
     cli->getRobotInterface(robot_name)
         ->getMotionControl()
         ->moveJoint(joints[2], 20 * (M_PI / 180), 10 * (M_PI / 180), 0, 0);
-    // 阻塞
+    // Blocking
     waitArrival(cli->getRobotInterface(robot_name));
-    // 等待机器人停稳
+    // Wait for robot to stabilize
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
-    // 记录第三个参考点的关节位置和TCP力传感器数据
+    // Record joint position and TCP force sensor data at the third reference point
     auto q3 = cli->getRobotInterface(robot_name)
                   ->getRobotState()
                   ->getJointPositions();
@@ -156,7 +156,7 @@ ForceSensorCalibResult tcpSensorcalibration(
                           ->getRobotState()
                           ->getTcpForceSensors();
 
-    // 正解获得三个参考点的位姿
+    // Forward kinematics to get poses of three reference points
     auto pose1 = cli->getRobotInterface(robot_name)
                      ->getRobotAlgorithm()
                      ->forwardKinematics(q1);
@@ -174,8 +174,8 @@ ForceSensorCalibResult tcpSensorcalibration(
     std::vector<std::vector<double>> calib_poses{ std::get<0>(pose1),
                                                   std::get<0>(pose2),
                                                   std::get<0>(pose3) };
-    // 力传感器标定算法(三点标定法)
-    // 将三个参考点的传感器数据与位姿传入到此接口中做负载辨识
+    // Force sensor calibration algorithm (three-point calibration method)
+    // Pass sensor data and poses of three reference points to this API for load identification
     auto result = cli->getRobotInterface(robot_name)
                       ->getRobotAlgorithm()
                       ->calibrateTcpForceSensor(calib_forces, calib_poses);
@@ -186,45 +186,45 @@ void exampleForceControl(RpcClientPtr cli)
 {
     auto robot_name = cli->getRobotNames().front();
 #ifdef EMBEDDED
-    // 设置力传感器类型为内置传感器
+    // Set force sensor type to embedded sensor
     std::vector<double> sensor_pose = { 0, 0, 0, 0, 0, 0 };
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
         ->selectTcpForceSensor("embedded");
 #else
-    // 设置力传感器类型为外置坤维传感器
+    // Set force sensor type to external KW sensor
     std::vector<double> sensor_pose = { 0, 0, 0.047, 0, 0, 0 };
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
         ->selectTcpForceSensor("kw_ftsensor");
 #endif
 
-    // 设置传感器安装位姿
+    // Set sensor installation pose
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
         ->setTcpForceSensorPose(sensor_pose);
 
-    // 设置TCP偏移
+    // Set TCP offset
     std::vector<double> tcp_pose = sensor_pose;
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
         ->setTcpOffset(tcp_pose);
 
-    // 负载辨识参考点
+    // Reference points for load identification
     std::vector<double> joint1 = { -0.261799, 0.261799, 1.309,
                                    1.0472,    1.39626,  0.0 };
     std::vector<double> joint2 = { -0.628319, 0.471239, 1.65806,
                                    -0.471239, 0.0,      0.0 };
     std::vector<double> joint3 = { -0.628319, 0.366519, 1.74533,
                                    -0.10472,  1.5708,   0.0 };
-    // 力传感器标定
+    // Force sensor calibration
     auto calib_result = tcpSensorcalibration(cli, { joint1, joint2, joint3 });
     std::cout << "force_offset: " << std::get<0>(calib_result) << std::endl;
     std::cout << "com: " << std::get<1>(calib_result) << std::endl;
     std::cout << "mass: " << std::get<2>(calib_result) << std::endl;
 
     if (calculateDistance(std::get<0>(calib_result)) < 0.0001) {
-        std::cout << "标定错误，请检查传感器数据!" << std::endl;
+        std::cout << "Calibration error, please check sensor data!" << std::endl;
         exit(-1);
     }
     std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -233,45 +233,45 @@ void exampleForceControl(RpcClientPtr cli)
     std::vector<double> start_joint = { 0 / 180 * M_PI,     16.41 / 180 * M_PI,
                                         76.36 / 180 * M_PI, 7.87 / 180 * M_PI,
                                         90.21 / 180 * M_PI, 0 / 180 * M_PI };
-    // 关节运动到起始位置
+    // Move joints to starting position
     cli->getRobotInterface(robot_name)
         ->getMotionControl()
         ->moveJoint(start_joint, 10 * (M_PI / 180), 5 * (M_PI / 180), 0, 0);
     waitArrival(cli->getRobotInterface(robot_name));
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
-    // (通过负载辨识的结果来)设置负载
+    // (Use the result of load identification to) set payload
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
         ->setPayload(std::get<2>(calib_result), std::get<1>(calib_result),
                      { 0. }, { 0. });
-    // 设置力传感器偏移
+    // Set force sensor offset
     cli->getRobotInterface(robot_name)
         ->getRobotConfig()
         ->setTcpForceOffset(std::get<0>(calib_result));
 
-    // 导纳质量
+    // Admittance mass
     std::vector<double> admittance_m = { 10.0, 10.0, 10.0, 2.0, 2.0, 2.0 };
-    // 导纳阻尼
-    // 用来调节力控运动过程中的速度大小，在相同受力情况下，阻尼越大，速度越小
+    // Admittance damping
+    // Used to adjust the speed during force control motion; higher damping means lower speed under the same force
     std::vector<double> admittance_d = {
         200.0, 200.0, 200.0, 20.0, 20.0, 20.0
     };
-    // 导纳刚度
-    // 用来调节机械臂弹性，刚度越大回弹越快
+    // Admittance stiffness
+    // Used to adjust robot elasticity; higher stiffness means faster rebound
     std::vector<double> admittance_k = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-    // 设置力控动力学模型
+    // Set force control dynamic model
     cli->getRobotInterface(robot_name)
         ->getForceControl()
         ->setDynamicModel(admittance_m, admittance_d, admittance_k);
 
-    // 柔性轴（方向）选择
+    // Compliance axis (direction) selection
     std::vector<bool> compliance = { true, true, true, true, true, true };
-    // 目标力/力矩
+    // Target force/torque
     std::vector<double> target_wrench(6, 0.);
-    // 速度限制
+    // Speed limits
     std::vector<double> speed_limits(6, 2.0);
-    // 设置力控参考(目标)值。
+    // Set force control reference (target) value.
     cli->getRobotInterface(robot_name)
         ->getForceControl()
         ->setTargetForce(std::vector<double>(6, 0.), compliance, target_wrench,
@@ -293,7 +293,7 @@ void exampleForceControl(RpcClientPtr cli)
                           << std::endl;
                 break;
             } else {
-                // 使能力控
+                // Enable force control
                 cli->getRobotInterface(robot_name)
                     ->getForceControl()
                     ->fcEnable();
@@ -309,7 +309,7 @@ void exampleForceControl(RpcClientPtr cli)
                           << std::endl;
                 break;
             } else {
-                // 退出力控
+                // Disable force control
                 cli->getRobotInterface(robot_name)
                     ->getForceControl()
                     ->fcDisable();
@@ -327,19 +327,19 @@ void exampleForceControl(RpcClientPtr cli)
 int main(int argc, char **argv)
 {
 #ifdef _WIN32
-    // 将Windows控制台输出代码页设置为 UTF-8
+    // Set Windows console output code page to UTF-8
     SetConsoleOutputCP(CP_UTF8);
 #endif
     auto rpc_cli = std::make_shared<RpcClient>();
     rpc_cli->setRequestTimeout(1000);
-    // 接口调用: 连接到 RPC 服务
+    // API call: Connect to RPC service
     rpc_cli->connect(LOCAL_IP, 30004);
-    // 接口调用: 登录
+    // API call: Login
     rpc_cli->login("aubo", "123456");
 
-    // 使能和退出力控
+    // Enable and disable force control
     exampleForceControl(rpc_cli);
 
-    // 读取力传感器数据并保存到force.csv文件中
+    // Read force sensor data and save to force.csv file
     //    tcpSensorTest(rpc_cli);
 }

@@ -22,7 +22,7 @@ inline std::ostream &operator<<(std::ostream &os, const std::vector<T> &list)
     return os;
 }
 
-// 实现阻塞功能: 当机械臂运动到目标路点时，程序再往下执行
+// Implement blocking functionality: When the robot arm moves to the target waypoint, the program continues execution
 int waitArrivel(RobotInterfacePtr impl)
 {
     int cnt = 0;
@@ -60,7 +60,7 @@ void waitMovePathBufferFinished(RobotInterfacePtr impl)
 
 void generateTraj(RpcClientPtr cli, TrajConfig &traj_conf)
 {
-    // 接口调用: 获取机器人的名字
+    // API call: Get the robot's name
     auto robot_name = cli->getRobotNames().front();
 
     cli->getRobotInterface(robot_name)
@@ -71,12 +71,12 @@ void generateTraj(RpcClientPtr cli, TrajConfig &traj_conf)
                        ->getRobotAlgorithm()
                        ->payloadIdentifyTrajGenFinished();
         if (ret == 0) {
-            std::cout << "负载辨识轨迹生成完成！" << std::endl;
+            std::cout << "Payload identification trajectory generation completed!" << std::endl;
             break;
         } else if (ret == 1) {
-            std::cout << "负载辨识轨迹正在生成中..." << std::endl;
+            std::cout << "Payload identification trajectory is being generated..." << std::endl;
         } else {
-            std::cout << "轨迹生成失败，ret=" << ret << std::endl;
+            std::cout << "Trajectory generation failed, ret=" << ret << std::endl;
             exit(-1);
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -92,10 +92,10 @@ void generateTraj(RpcClientPtr cli, TrajConfig &traj_conf)
     while (!cli->getRobotInterface(robot_name)
                 ->getMotionControl()
                 ->pathBufferValid("identify_traj")) {
-        std::cout << "轨迹优化中..." << std::endl;
+        std::cout << "Trajectory optimization in progress..." << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
-    std::cout << "负载辨识轨迹生成完成！" << std::endl;
+    std::cout << "Payload identification trajectory generation completed!" << std::endl;
 }
 
 void runTraj(RpcClientPtr cli, RtdeClientPtr rtde_cli,
@@ -114,25 +114,25 @@ void runTraj(RpcClientPtr cli, RtdeClientPtr rtde_cli,
         ->getRobotManage()
         ->startRecord(data_file_name);
     waitMovePathBufferFinished(cli->getRobotInterface(robot_name));
-    std::cout << "轨迹运行完成" << std::endl;
+    std::cout << "Trajectory execution completed" << std::endl;
     cli->getRobotInterface(robot_name)->getRobotManage()->stopRecord();
 }
 
 void examplePayloadIdentify(RpcClientPtr cli, RtdeClientPtr rtde_cli)
 {
-    // 生成激励轨迹
+    // Generate excitation trajectory
     TrajConfig traj_conf;
     traj_conf.move_axis = PayloadIdentifyMoveAxis::Joint_3_6;
-    traj_conf.max_velocity = { 3.0, 3.0 }; // 维度与运动的关节数量一致
-    traj_conf.max_acceleration = { 5.0, 5.0 }; // 维度与运动的关节数量一致
+    traj_conf.max_velocity = { 3.0, 3.0 }; // Dimension matches the number of moving joints
+    traj_conf.max_acceleration = { 5.0, 5.0 }; // Dimension matches the number of moving joints
     traj_conf.lower_joint_bound = { -1.5, -2 };
     traj_conf.upper_joint_bound = { 1.5, 2 };
     traj_conf.init_joint = { -0.0, -0.2618, 1.047, -0.1745, 1.57, 0.0 };
     generateTraj(cli, traj_conf);
-    std::cout << "请卸下负载，按 Enter 键开始运行轨迹:" << std::endl;
+    std::cout << "Please remove the payload, press Enter to start running the trajectory:" << std::endl;
     std::cin.get();
     runTraj(cli, rtde_cli, "data_no_payload.csv", traj_conf);
-    std::cout << "请安装负载，按 Enter 键开始运行轨迹:" << std::endl;
+    std::cout << "Please install the payload, press Enter to start running the trajectory:" << std::endl;
     std::cin.get();
     runTraj(cli, rtde_cli, "data_with_payload.csv", traj_conf);
 
@@ -146,12 +146,12 @@ void examplePayloadIdentify(RpcClientPtr cli, RtdeClientPtr rtde_cli)
                        ->getRobotAlgorithm()
                        ->payloadCalculateFinished();
         if (ret == 0) {
-            std::cout << "负载计算完成！" << std::endl;
+            std::cout << "Payload calculation completed!" << std::endl;
             break;
         } else if (ret == 1) {
-            std::cout << "负载正在计算..." << std::endl;
+            std::cout << "Payload is being calculated..." << std::endl;
         } else {
-            std::cout << "负载计算失败，ret=" << ret << std::endl;
+            std::cout << "Payload calculation failed, ret=" << ret << std::endl;
             exit(-1);
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -159,42 +159,42 @@ void examplePayloadIdentify(RpcClientPtr cli, RtdeClientPtr rtde_cli)
     auto result = cli->getRobotInterface(robot_name)
                       ->getRobotAlgorithm()
                       ->getPayloadIdentifyResult();
-    std::cout << "计算结果为:" << std::endl;
+    std::cout << "Calculation result:" << std::endl;
     std::cout << "mass: " << std::get<0>(result) << std::endl;
     std::cout << "com: " << std::get<1>(result) << std::endl;
     std::cout << "inertia: " << std::get<3>(result) << std::endl;
 }
 
 /**
- * 功能: 负载辨识
- * 步骤:
- * 第一步: 连接到 RPC 服务、登录
- * 第二步: 机械臂上电
- * 第三步: 设置激励轨迹的限制，生成激励轨迹
- * 第四步: 空载运行离线轨迹，通过rtde采集关节位置、关节速度、关节电流
- * 第五步: 带载运行离线轨迹，通过rtde采集关节位置、关节速度、关节电流
- * 第六步: 计算辨识结果
+ * Function: Payload identification
+ * Steps:
+ * Step 1: Connect to the RPC service and log in
+ * Step 2: Power on the robot arm
+ * Step 3: Set the limits for the excitation trajectory and generate the excitation trajectory
+ * Step 4: Run the offline trajectory without payload, collect joint position, joint velocity, and joint current via rtde
+ * Step 5: Run the offline trajectory with payload, collect joint position, joint velocity, and joint current via rtde
+ * Step 6: Calculate the identification result
  */
 #define LOCAL_IP "127.0.0.1"
 
 int main(int argc, char **argv)
 {
 #ifdef WIN32
-    // 将Windows控制台输出代码页设置为 UTF-8
+    // Set Windows console output code page to UTF-8
     SetConsoleOutputCP(CP_UTF8);
 #endif
 
     auto rpc_cli = std::make_shared<RpcClient>();
     rpc_cli->setRequestTimeout(1000);
-    // 接口调用: 连接到 RPC 服务
+    // API call: Connect to the RPC service
     rpc_cli->connect(LOCAL_IP, 30004);
-    // 接口调用: 登录
+    // API call: Log in
     rpc_cli->login("aubo", "123456");
 
     auto rtde_cli = std::make_shared<RtdeClient>();
-    // 接口调用: 连接到 RTDE 服务
+    // API call: Connect to the RTDE service
     rtde_cli->connect(LOCAL_IP, 30010);
-    // 接口调用: 登录
+    // API call: Log in
     rtde_cli->login("aubo", "123456");
 
     examplePayloadIdentify(rpc_cli, rtde_cli);

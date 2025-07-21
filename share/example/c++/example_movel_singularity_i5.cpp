@@ -13,15 +13,15 @@ using namespace arcs::aubo_sdk;
 #define M_PI 3.14159265358979323846
 #endif
 
-// 实现阻塞功能: 当机械臂运动到目标路点时，程序再往下执行
+// Implement blocking: The program continues only after the robot arm reaches the target waypoint
 int waitArrival(RobotInterfacePtr impl) {
   const int max_retry_count = 5;
   int cnt = 0;
 
-  // 接口调用: 获取当前的运动指令 ID
+  // API call: Get the current motion command ID
   int exec_id = impl->getMotionControl()->getExecId();
 
-  // 等待机械臂开始运动
+  // Wait for the robot arm to start moving
   while (exec_id == -1) {
     if (cnt++ > max_retry_count) {
       return -1;
@@ -30,7 +30,7 @@ int waitArrival(RobotInterfacePtr impl) {
     exec_id = impl->getMotionControl()->getExecId();
   }
 
-  // 等待机械臂动作完成
+  // Wait for the robot arm to finish the action
   while (impl->getMotionControl()->getExecId() != -1) {
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
   }
@@ -38,48 +38,48 @@ int waitArrival(RobotInterfacePtr impl) {
   return 0;
 }
 
-// 直线运动
+// Linear movement
 void exampleMovel(RpcClientPtr cli) {
-  // 关节角，单位: 弧度
+  // Joint angles, unit: radians
   std::vector<double> joint_angle = {0.0 * (M_PI / 180),   -15.0 * (M_PI / 180),
                                      100.0 * (M_PI / 180), 25.0 * (M_PI / 180),
                                      90.0 * (M_PI / 180),  0.0 * (M_PI / 180)};
 
-  // 奇异点的位姿
+  // Pose at singularity
   std::vector<double> pose_singularity = {1000,    1000,      1000,
                                           3.05165, 0.0324355, 1.80417};
 
-  // 接口调用: 获取机器人的名字
+  // API call: Get the robot's name
   auto robot_name = cli->getRobotNames().front();
 
   auto robot_interface = cli->getRobotInterface(robot_name);
 
-  // 接口调用: 设置机械臂的速度比率
+  // API call: Set robot arm speed fraction
   robot_interface->getMotionControl()->setSpeedFraction(0.8);
 
-  // 接口调用: 设置工具中心点（TCP相对于法兰盘中心的偏移）
+  // API call: Set tool center point (TCP offset relative to flange center)
   std::vector<double> tcp_offset(6, 0.0);
   robot_interface->getRobotConfig()->setTcpOffset(tcp_offset);
 
-  // 接口调用: 关节运动到起始位置
+  // API call: Move joints to starting position
   robot_interface->getMotionControl()->moveJoint(joint_angle, 80 * (M_PI / 180),
                                                  60 * (M_PI / 180), 0, 0);
-  // 阻塞
+  // Blocking
   int ret = waitArrival(robot_interface);
   if (ret == 0) {
-    std::cout << "关节运动到起始位置成功！" << std::endl;
+    std::cout << "Joint movement to starting position succeeded!" << std::endl;
   } else {
-    std::cout << "关节运动到起始位置失败！" << std::endl;
+    std::cout << "Joint movement to starting position failed!" << std::endl;
   }
 
-  // 接口调用: 直线运动到奇异点
+  // API call: Linear movement to singularity
   robot_interface->getMotionControl()->moveLine(pose_singularity, 1.2, 0.25,
                                                 0.025, 0);
   ret = waitArrival(robot_interface);
   if (ret == 0) {
-    std::cout << "直线运动成功！" << std::endl;
+    std::cout << "Linear movement succeeded!" << std::endl;
   } else {
-    std::cout << "直线运动失败！" << std::endl;
+    std::cout << "Linear movement failed!" << std::endl;
   }
 }
 
@@ -91,47 +91,47 @@ void printlog(int level, const char *source, int code, std::string content) {
 }
 
 /**
- * 功能: 机械臂直线运动到奇异点
- * 步骤:
- * 第一步: 设置 RPC 超时、连接 RPC 服务、机械臂登录
- * 第二步: 连接 RTDE 服务、登录
- * 第三步: RTDE 设置话题、订阅话题来打印error_stack中的日志信息
- * 第四步: 设置运动速度比率和工具中心点
- * 第五步: 先关节运动到起始位置，然后再以直线运动的方式到奇异点
- * 第六步: RTDE 退出登录、断开连接
- * 第七步: RPC 退出登录、断开连接
+ * Function: Robot arm linear movement to singularity
+ * Steps:
+ * Step 1: Set RPC timeout, connect to RPC service, robot arm login
+ * Step 2: Connect to RTDE service, login
+ * Step 3: RTDE set topic, subscribe to topic to print logs from error_stack
+ * Step 4: Set movement speed fraction and tool center point
+ * Step 5: First move joints to starting position, then move linearly to singularity
+ * Step 6: RTDE logout, disconnect
+ * Step 7: RPC logout, disconnect
  */
 
 #define LOCAL_IP "127.0.0.1"
 
 int main(int argc, char **argv) {
 #ifdef WIN32
-  // 将Windows控制台输出代码页设置为 UTF-8
+  // Set Windows console output code page to UTF-8
   SetConsoleOutputCP(CP_UTF8);
 #endif
 
   auto rpc_cli = std::make_shared<RpcClient>();
-  // 接口调用: 设置 RPC 超时
+  // API call: Set RPC timeout
   rpc_cli->setRequestTimeout(1000);
-  // 接口调用: 连接到 RPC 服务
+  // API call: Connect to RPC service
   rpc_cli->connect(LOCAL_IP, 30004);
-  // 接口调用: 登录
+  // API call: Login
   rpc_cli->login("aubo", "123456");
 
   auto rtde_cli = std::make_shared<RtdeClient>();
-  // 接口调用: 连接到 RTDE 服务
+  // API call: Connect to RTDE service
   rtde_cli->connect(LOCAL_IP, 30010);
-  // 接口调用: 登录
+  // API call: Login
   rtde_cli->login("aubo", "123456");
 
-  // 接口调用: 设置 RTDE 话题
+  // API call: Set RTDE topic
   int topic = rtde_cli->setTopic(false, {"R1_message"}, 200, 0);
   if (topic < 0) {
-    std::cout << "设置话题失败!" << std::endl;
+    std::cout << "Failed to set topic!" << std::endl;
     return -1;
   }
 
-  // 接口调用: 订阅话题
+  // API call: Subscribe to topic
   rtde_cli->subscribe(topic, [](InputParser &parser) {
     arcs::common_interface::RobotMsgVector msgs;
     msgs = parser.popRobotMsgVector();
@@ -146,24 +146,24 @@ int main(int argc, char **argv) {
           break;
         }
       }
-      // 打印日志信息
+      // Print log information
       printlog(msg.level, msg.source.c_str(), msg.code, error_content);
     }
   });
 
-  // 直线运动到奇异点
+  // Linear movement to singularity
   exampleMovel(rpc_cli);
 
-  // 接口调用: 取消话题
+  // API call: Remove topic
   rtde_cli->removeTopic(false, topic);
-  // 接口调用: 退出登录
+  // API call: Logout
   rtde_cli->logout();
-  // 接口调用: 断开连接
+  // API call: Disconnect
   rtde_cli->disconnect();
 
-  // 接口调用: 退出登录
+  // API call: Logout
   rpc_cli->logout();
-  // 接口调用: 断开连接
+  // API call: Disconnect
   rpc_cli->disconnect();
 
   return 0;

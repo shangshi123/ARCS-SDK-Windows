@@ -6,27 +6,27 @@ using namespace arcs::common_interface;
 using namespace arcs::aubo_sdk;
 
 /**
- * 功能: 设置运动学模型补偿参数和获取DH参数
- * 步骤:
- * 第一步: 连接 RPC 服务、机械臂登录
- * 第二步: 设置运动学模型补偿参数
- * 第三步: 获取机器人DH参数
+ * Function: Set kinematic model compensation parameters and get DH parameters
+ * Steps:
+ * Step 1: Connect to RPC service and log in to the robot
+ * Step 2: Set kinematic model compensation parameters
+ * Step 3: Get robot DH parameters
  */
 #define LOCAL_IP "127.0.0.1"
 
 int main(int argc, char **argv)
 {
     auto rpc_cli = std::make_shared<RpcClient>();
-    // 接口调用: 连接到 RPC 服务
+    // API call: connect to RPC service
     rpc_cli->connect(LOCAL_IP, 30004);
-    // 接口调用: 登录
+    // API call: log in
     rpc_cli->login("aubo", "123456");
 
-    // 接口调用: 获取机器人的名字
+    // API call: get robot name
     auto name = rpc_cli->getRobotNames().front();
     auto impl = rpc_cli->getRobotInterface(name);
 
-    // 运动学模型补偿数据
+    // Kinematic model compensation data
     std::string value =
         "[dh_comp]\r\n"
         "alpha = [0.0, 0.000886627, -0.00305258, 0.00168948, 0.000534071, "
@@ -38,12 +38,12 @@ int main(int argc, char **argv)
         "0.0]\r\n"
         "beta  = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]\r\n";
 
-    // 接口调用: 设置运动学模型补偿参数
+    // API call: set kinematic model compensation parameters
     impl->getRobotConfig()->setPersistentParameters(value);
 
     std::this_thread::sleep_for(std::chrono::seconds(10));
 
-    // 接口调用: 获取机器人DH参数
+    // API call: get robot DH parameters
     auto dh = impl->getRobotConfig()->getKinematicsParam(true);
     for (auto iter : dh) {
         std::cout << iter.first << ":";
