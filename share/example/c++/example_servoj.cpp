@@ -16,16 +16,16 @@ using namespace arcs::common_interface;
 #define M_PI 3.14159265358979323846
 #endif
 
-// 实现阻塞功能: 当机械臂运动到目标路点时，程序再往下执行
+// Implement blocking functionality: When the robot arm moves to the target waypoint, the program continues to execute
 int waitArrival(RobotInterfacePtr impl)
 {
     const int max_retry_count = 5;
     int cnt = 0;
 
-    // 接口调用: 获取当前的运动指令 ID
+    // API call: Get the current motion command ID
     int exec_id = impl->getMotionControl()->getExecId();
 
-    // 等待机械臂开始运动
+    // Wait for the robot arm to start moving
     while (exec_id == -1) {
         if (cnt++ > max_retry_count) {
             return -1;
@@ -34,7 +34,7 @@ int waitArrival(RobotInterfacePtr impl)
         exec_id = impl->getMotionControl()->getExecId();
     }
 
-    // 等待机械臂动作完成
+    // Wait for the robot arm action to complete
     while (impl->getMotionControl()->getExecId() != -1) {
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
@@ -57,17 +57,17 @@ inline std::ostream &operator<<(std::ostream &os, const std::vector<T> &list)
 class TrajectoryIo
 {
 public:
-    // 构造函数，接受要打开的文件名作为参数
+    // Constructor, accepts the filename to open as a parameter
     TrajectoryIo(const char *filename)
     {
         input_file_.open(filename, std::ios::in);
     }
 
-    // 检查文件是否成功打开
+    // Check if the file was opened successfully
     bool open()
     {
         if (!input_file_.is_open()) {
-            std::cerr << "无法打开轨迹文件. 请检查输入的文件路径是否正确."
+            std::cerr << "Unable to open trajectory file. Please check if the input file path is correct."
                       << std::endl;
             return false;
         }
@@ -75,10 +75,10 @@ public:
     }
     ~TrajectoryIo() { input_file_.close(); }
 
-    // 解析文件中的轨迹数据，
-    // 并将其转换为一个二维的 std::vector。
-    // 它逐行读取文件内容，将每行数据解析为一组 double 数值，
-    // 并将这些数值存储在一个嵌套的二维向量中。
+    // Parse trajectory data from the file,
+    // and convert it into a two-dimensional std::vector.
+    // It reads the file line by line, parses each line into a set of double values,
+    // and stores these values in a nested two-dimensional vector.
     std::vector<std::vector<double>> parse()
     {
         std::vector<std::vector<double>> res;
@@ -98,15 +98,15 @@ public:
         return res;
     }
 
-    // 切割字符串并转换为 double 类型
+    // Split string and convert to double type
     std::vector<double> split(const std::string &str, const char *delim)
     {
         std::vector<double> res;
         if ("" == str) {
             return res;
         }
-        // 先将要切割的字符串从string类型转换为char*类型
-        char *strs = new char[str.length() + 1]; // 不要忘了
+        // First convert the string to be split from string type to char* type
+        char *strs = new char[str.length() + 1]; // Don't forget
         std::strcpy(strs, str.c_str());
 
         char *p = std::strtok(strs, delim);
@@ -118,7 +118,7 @@ public:
                 strs = nullptr;
                 throw p;
             }
-            res.push_back(v); // 存入结果数组
+            res.push_back(v); // Store in result array
             p = std::strtok(nullptr, delim);
         }
 
@@ -131,7 +131,7 @@ public:
     }
 
 private:
-    std::ifstream input_file_; // 输入文件流
+    std::ifstream input_file_; // Input file stream
 };
 
 const char *SERVOJ_SCRIPT = R"(local aubo = require('aubo')
@@ -166,7 +166,7 @@ return function(api)
     end
     while robot:getRobotState():isSteady() == false do
     end
-    -- 当机械臂在运动时，setServoMode会失败
+    -- When the robot arm is moving, setServoMode will fail
     robot:getMotionControl():setServoMode(false)
 end
 
@@ -178,30 +178,30 @@ end
 int main(int argc, char **argv)
 {
 #ifdef WIN32
-    // 将Windows控制台输出代码页设置为 UTF-8
+    // Set Windows console output code page to UTF-8
     SetConsoleOutputCP(CP_UTF8);
 #endif
     auto rpc_cli = std::make_shared<RpcClient>();
-    // 接口调用: 设置 RPC 超时
+    // API call: Set RPC timeout
     rpc_cli->setRequestTimeout(1000);
-    // 接口调用: 连接到 RPC 服务
+    // API call: Connect to RPC service
     rpc_cli->connect(LOCAL_IP, 30004);
-    // 接口调用: 登录
+    // API call: Login
     rpc_cli->login("aubo", "123456");
 
     auto rtde_cli = std::make_shared<RtdeClient>();
-    // 接口调用: 连接到 RTDE 服务
+    // API call: Connect to RTDE service
     rtde_cli->connect(LOCAL_IP, 30010);
-    // 接口调用: 登录
+    // API call: Login
     rtde_cli->login("aubo", "123456");
 
     auto script_cli = std::make_shared<ScriptClient>();
-    // 接口调用: 连接到 SCRIPT 服务
+    // API call: Connect to SCRIPT service
     script_cli->connect(LOCAL_IP, 30002);
-    // 接口调用: 登录
+    // API call: Login
     script_cli->login("aubo", "123456");
 
-    // 接口调用: 设置话题
+    // API call: Set topic
     int chanel_out = rtde_cli->setTopic(
         true,
         { "input_int_registers_0", "input_double_registers_0",
@@ -210,53 +210,53 @@ int main(int argc, char **argv)
           "input_double_registers_5" },
         200, 0);
 
-    // 读取轨迹文件
+    // Read trajectory file
     auto filename = "../trajs/record6.offt";
     TrajectoryIo input(filename);
 
-    // 尝试打开轨迹文件，如果无法打开，直接返回
+    // Try to open trajectory file, if unable to open, return directly
     if (!input.open()) {
         return 0;
     }
 
-    // 解析轨迹数据
+    // Parse trajectory data
     auto traj = input.parse();
 
-    // 检查轨迹文件中是否有路点，
-    // 如果数量为 0，输出错误消息并返回
+    // Check if there are waypoints in the trajectory file,
+    // If the number is 0, output error message and return
     auto traj_sz = traj.size();
     if (traj_sz == 0) {
-        std::cerr << "轨迹文件中的路点数量为0." << std::endl;
+        std::cerr << "The number of waypoints in the trajectory file is 0." << std::endl;
         return 0;
     }
 
-    // 接口调用: 获取机器人的名字
+    // API call: Get robot's name
     auto robot_name = rpc_cli->getRobotNames().front();
 
     auto robot_interface = rpc_cli->getRobotInterface(robot_name);
 
-    // 接口调用: 设置机械臂的速度比率
+    // API call: Set robot arm speed ratio
     robot_interface->getMotionControl()->setSpeedFraction(0.3);
 
-    // 接口调用: 关节运动到轨迹文件中的第一个路点
+    // API call: Move joint to the first waypoint in the trajectory file
     rpc_cli->getRobotInterface(robot_name)
         ->getMotionControl()
         ->moveJoint(traj[0], 30 * (M_PI / 180), 30 * (M_PI / 180), 0., 0.);
 
-    // 阻塞
+    // Blocking
     int ret = waitArrival(robot_interface);
     if (ret == 0) {
-        std::cout << "关节运动到轨迹文件中的第一个路点成功" << std::endl;
+        std::cout << "Joint moved to the first waypoint in the trajectory file successfully" << std::endl;
     } else {
-        std::cout << "关节运动到轨迹文件中的第一个路点失败" << std::endl;
+        std::cout << "Joint failed to move to the first waypoint in the trajectory file" << std::endl;
     }
 
-    // 接口调用: 执行本地脚本
+    // API call: Execute local script
     script_cli->sendString(SERVOJ_SCRIPT);
 
     size_t i = 1;
     while (1) {
-        // 接口调用: 发布话题
+        // API call: Publish topic
         rtde_cli->publish(chanel_out, [&](OutputBuilder &ob) {
             ob.push(6);
             ob.push(traj[i][0]);
@@ -270,7 +270,7 @@ int main(int argc, char **argv)
         });
 
         if (i == traj_sz) {
-            // 接口调用: 发布话题
+            // API call: Publish topic
             rtde_cli->publish(chanel_out, [&](OutputBuilder &ob) {
                 std::cout << i << ": end" << std::endl;
                 ob.push(-1);
@@ -288,26 +288,26 @@ int main(int argc, char **argv)
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
 
-    // 阻塞已保证执行完脚本中的setServoMode(false)来退出伺服模式
+    // Blocking to ensure execution of setServoMode(false) in the script to exit servo mode
     while (robot_interface->getMotionControl()->isServoModeEnabled() == true) {
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
-    std::cout << "servoj运动结束" << std::endl;
+    std::cout << "servoj motion ended" << std::endl;
 
-    // 接口调用: 取消话题
+    // API call: Remove topic
     rtde_cli->removeTopic(false, chanel_out);
 
-    // 接口调用: RPC 退出登录
+    // API call: RPC logout
     rpc_cli->logout();
-    // 接口调用: RPC 断开连接
+    // API call: RPC disconnect
     rpc_cli->disconnect();
-    // 接口调用: RTDE 退出登录
+    // API call: RTDE logout
     rtde_cli->logout();
-    // 接口调用: RTDE 断开连接
+    // API call: RTDE disconnect
     rtde_cli->disconnect();
-    // 接口调用: SCRIPT 退出登录
+    // API call: SCRIPT logout
     script_cli->logout();
-    // 接口调用: SCRIPT 断开连接
+    // API call: SCRIPT disconnect
     script_cli->disconnect();
 
     return 0;
