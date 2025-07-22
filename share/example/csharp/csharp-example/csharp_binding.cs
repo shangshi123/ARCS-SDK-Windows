@@ -18,18 +18,18 @@ namespace csharp_example
 
     public static class GlobalConstants
     {
-        // 需要根据使用的dll库更改
+        // Change according to the DLL library used
         public const string service_interface_dll = "aubo_sdkd.dll";
     }
 
     public class cSharpBinding
     {
          const string service_interface_dll = GlobalConstants.service_interface_dll;
-        //关节个数
+        // Number of joints
         const int ARM_DOF = 6;
-        //M_PI
+        // M_PI
         const double M_PI = 3.14159265358979323846;
-        //路点位置信息的表示方法
+        // Representation of waypoint position information
         [StructLayout(LayoutKind.Sequential)]
         public struct Pos
         {
@@ -38,16 +38,16 @@ namespace csharp_example
             public double z;
         }
 
-        //路点位置信息的表示方法
+        // Representation of waypoint position information
         [StructLayout(LayoutKind.Sequential)]
         public struct cartesianPos_U
         {
-            // 指定数组尺寸
+            // Specify array size
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
             public double[] positionVector;
         };
 
-        //姿态的四元素表示方法
+        // Quaternion representation of orientation
         [StructLayout(LayoutKind.Sequential)]
         public struct Ori
         {
@@ -57,7 +57,7 @@ namespace csharp_example
             public double z;
         };
 
-        //姿态的欧拉角表示方法
+        // Euler angle representation of orientation
         [StructLayout(LayoutKind.Sequential)]
         public struct Rpy
         {
@@ -66,15 +66,15 @@ namespace csharp_example
             public double rz;
         };
 
-        //描述机械臂的路点信息
+        // Structure describing robot waypoint information
         [StructLayout(LayoutKind.Sequential)]
         public struct wayPoint_S
         {
-            //机械臂的位置信息　X,Y,Z
+            // Robot position information X, Y, Z
             public Pos cartPos;
-            //机械臂姿态信息
+            // Robot orientation information
             public Ori orientation;
-            //机械臂关节角信息
+            // Robot joint angle information
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = ARM_DOF)]
             public double[] jointpos;
         };
@@ -88,7 +88,7 @@ namespace csharp_example
         };
 
 
-        //机械臂关节速度加速度信息
+        // Robot joint velocity and acceleration information
         [StructLayout(LayoutKind.Sequential)]
         public struct JointVelcAccParam
         {
@@ -96,7 +96,7 @@ namespace csharp_example
             public double[] jointPara;
         };
 
-        //机械臂关节角度
+        // Robot joint angles
         [StructLayout(LayoutKind.Sequential)]
         public struct JointRadian
         {
@@ -104,50 +104,50 @@ namespace csharp_example
             public double[] jointRadian;
         };
 
-        //机械臂工具端参数
+        // Robot tool end parameters
         [StructLayout(LayoutKind.Sequential)]
         public struct ToolInEndDesc
         {
-            //工具相对于末端坐标系的位置
+            // Tool position relative to end coordinate system
             public Pos cartPos;
-            //工具相对于末端坐标系的姿态
+            // Tool orientation relative to end coordinate system
             public Ori orientation;
         };
 
-        //坐标系结构体
+        // Coordinate system structure
         [StructLayout(LayoutKind.Sequential)]
         public struct CoordCalibrate
         {
-            //坐标系类型：当coordType==BaseCoordinate或者coordType==EndCoordinate是，下面3个参数不做处理
+            // Coordinate system type: When coordType==BaseCoordinate or coordType==EndCoordinate, the following 3 parameters are not processed
             public int coordType;
-            //坐标系标定方法
+            // Coordinate system calibration method
             public int methods;
-            //用于标定坐标系的３个点（关节角），对应于机械臂法兰盘中心点基于基座标系
+            // Three points (joint angles) used for calibration, corresponding to the robot flange center point based on base coordinate system
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
             public JointRadian[] jointPara;
-            //标定的时候使用的工具描述
+            // Tool description used during calibration
             public ToolInEndDesc toolDesc;
         };
 
 
-        //工具标定结构体
+        // Tool calibration structure
         [StructLayout(LayoutKind.Sequential)]
         public struct ToolCalibrate
         {
-            //用于位置标定点的数量
+            // Number of position calibration points
             public int posCalibrateNum;
-            //位置标定点
+            // Position calibration points
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
             public wayPoint_S[] posCalibrateWaypoint;
-            //用于姿态标定点的数量
+            // Number of orientation calibration points
             public int oriCalibrateNum;
-            //姿态标定点
+            // Orientation calibration points
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
             public wayPoint_S[] oriCalibrateWaypoint;
             public int CalibMethod;
         };
 
-        //转轴定义
+        // Axis definition
         [StructLayout(LayoutKind.Sequential)]
         public struct MoveRotateAxis
         {
@@ -155,21 +155,21 @@ namespace csharp_example
             public double[] rotateAxis;
         };
 
-        //描述运动属性中的偏移属性
+        // Describes offset properties in motion attributes
         [StructLayout(LayoutKind.Sequential)]
         public struct MoveRelative
         {
-            //是否使能偏移
+            // Whether offset is enabled
             public byte enable;
-            //偏移量 x,y,z
+            // Offset x,y,z
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
             public float[] pos;
             //public Pos pos;
-            //相对姿态偏移量
+            // Relative orientation offset
             public Ori orientation;
         };
 
-        //该结构体描述工具惯量
+        // Structure describing tool inertia
         [StructLayout(LayoutKind.Sequential)]
         public struct ToolInertia
         {
@@ -181,88 +181,88 @@ namespace csharp_example
             public double zz;
         };
 
-        //动力学参数
+        // Dynamics parameters
         [StructLayout(LayoutKind.Sequential)]
         public struct ToolDynamicsParam
         {
-            public double positionX; //工具重心的X坐标
-            public double positionY; //工具重心的Y坐标
-            public double positionZ; //工具重心的Z坐标
-            public double payload; //工具重量
-            public ToolInertia toolInertia; //工具惯量
+            public double positionX; // Tool center of gravity X coordinate
+            public double positionY; // Tool center of gravity Y coordinate
+            public double positionZ; // Tool center of gravity Z coordinate
+            public double payload; // Tool weight
+            public ToolInertia toolInertia; // Tool inertia
         };
 
-        //机械臂事件
+        // Robot event
         [StructLayout(LayoutKind.Sequential)]
         public struct RobotEventInfo
         {
-            public int eventType; //事件类型号
-            public int eventCode; //事件代码
-            public IntPtr eventContent; //事件内容(std::string)
+            public int eventType; // Event type number
+            public int eventCode; // Event code
+            public IntPtr eventContent; // Event content (std::string)
         };
 
-        //关节状态信息
+        // Joint status information
         [StructLayout(LayoutKind.Sequential)]
         public struct JointStatus
         {
-            public int jointCurrentI;       // 关节电流    Current of driver
-            public int jointSpeedMoto;      // 关节速度    Speed of driver
-            public float jointPosJ;           // 关节角      Current position in radian
-            public float jointCurVol;         // 关节电压    Rated voltage of motor. Unit: mV
-            public float jointCurTemp;        // 当前温度    Current temprature of joint
-            public int jointTagCurrentI;    // 电机目标电流 Target current of motor
-            public float jointTagSpeedMoto;   // 电机目标速度 Target speed of motor
-            public float jointTagPosJ;        // 目标关节角　 Target position of joint in radian
-            public short jointErrorNum;       // 关节错误码   Joint error of joint num
+            public int jointCurrentI;       // Joint current    Current of driver
+            public int jointSpeedMoto;      // Joint speed      Speed of driver
+            public float jointPosJ;           // Joint angle      Current position in radian
+            public float jointCurVol;         // Joint voltage    Rated voltage of motor. Unit: mV
+            public float jointCurTemp;        // Current temperature    Current temperature of joint
+            public int jointTagCurrentI;    // Motor target current Target current of motor
+            public float jointTagSpeedMoto;   // Motor target speed Target speed of motor
+            public float jointTagPosJ;        // Target joint angle　 Target position of joint in radian
+            public short jointErrorNum;       // Joint error code   Joint error of joint num
         };
-        //机械臂诊断信息
+        // Robot diagnosis information
         [StructLayout(LayoutKind.Sequential)]
         public struct RobotDiagnosis
         {
-            public Byte armCanbusStatus;                // CAN通信状态:0x01~0x80：关节CAN通信错误（每个关节占用1bit） 0x00：无错误
-            public float armPowerCurrent;                // 机械臂48V电源当前电流
-            public float armPowerVoltage;                // 机械臂48V电源当前电压
-            public Byte armPowerStatus;                 // 机械臂48V电源状态（开、关）
-            public Byte contorllerTemp;                 // 控制箱温度
-            public Byte contorllerHumidity;             // 控制箱湿度
-            public Byte remoteHalt;                     // 远程关机信号
-            public Byte softEmergency;                  // 机械臂软急停
-            public Byte remoteEmergency;                // 远程急停信号
-            public Byte robotCollision;                 // 碰撞检测位
-            public Byte forceControlMode;               // 机械臂进入力控模式标志位
-            public Byte brakeStuats;                    // 刹车状态
-            public float robotEndSpeed;                  // 末端速度
-            public int robotMaxAcc;                    // 最大加速度
-            public Byte orpeStatus;                     // 上位机软件状态位
-            public Byte enableReadPose;                 // 位姿读取使能位
-            public Byte robotMountingPoseChanged;       // 安装位置状态
-            public Byte encoderErrorStatus;             // 磁编码器错误状态
-            public Byte staticCollisionDetect;          // 静止碰撞检测开关
-            public Byte jointCollisionDetect;           // 关节碰撞检测 每个关节占用1bit 0-无碰撞 1-存在碰撞
-            public Byte encoderLinesError;              // 光电编码器不一致错误 0-无错误 1-有错误
+            public Byte armCanbusStatus;                // CAN communication status: 0x01~0x80: Joint CAN communication error (each joint occupies 1 bit) 0x00: No error
+            public float armPowerCurrent;                // Robot 48V power current
+            public float armPowerVoltage;                // Robot 48V power voltage
+            public Byte armPowerStatus;                 // Robot 48V power status (on, off)
+            public Byte contorllerTemp;                 // Control box temperature
+            public Byte contorllerHumidity;             // Control box humidity
+            public Byte remoteHalt;                     // Remote shutdown signal
+            public Byte softEmergency;                  // Robot soft emergency stop
+            public Byte remoteEmergency;                // Remote emergency stop signal
+            public Byte robotCollision;                 // Collision detection bit
+            public Byte forceControlMode;               // Robot enters force control mode flag bit
+            public Byte brakeStuats;                    // Brake status
+            public float robotEndSpeed;                  // End speed
+            public int robotMaxAcc;                    // Maximum acceleration
+            public Byte orpeStatus;                     // Host software status bit
+            public Byte enableReadPose;                 // Pose read enable bit
+            public Byte robotMountingPoseChanged;       // Mounting position status
+            public Byte encoderErrorStatus;             // Magnetic encoder error status
+            public Byte staticCollisionDetect;          // Static collision detection switch
+            public Byte jointCollisionDetect;           // Joint collision detection Each joint occupies 1 bit 0-no collision 1-collision exists
+            public Byte encoderLinesError;              // Photoelectric encoder inconsistency error 0-no error 1-error
             public Byte jointErrorStatus;               // joint error status
-            public Byte singularityOverSpeedAlarm;      // 机械臂奇异点过速警告
-            public Byte robotCurrentAlarm;              // 机械臂电流错误警告
+            public Byte singularityOverSpeedAlarm;      // Robot singularity overspeed warning
+            public Byte robotCurrentAlarm;              // Robot current error warning
             public Byte toolIoError;                    // tool error
-            public Byte robotMountingPoseWarning;       // 机械臂安装位置错位（只在力控模式下起作用）
-            public ushort macTargetPosBufferSize;         // mac缓冲器长度          预留
-            public ushort macTargetPosDataSize;           // mac缓冲器有效数据长度   预留
-            public Byte macDataInterruptWarning;        // mac数据中断           预留
-            public Byte controlBoardAbnormalStateFlag;  //主控板(接口板)异常状态标志
+            public Byte robotMountingPoseWarning;       // Robot mounting position misalignment (only works in force control mode)
+            public ushort macTargetPosBufferSize;         // mac buffer length          reserved
+            public ushort macTargetPosDataSize;           // mac buffer valid data length   reserved
+            public Byte macDataInterruptWarning;        // mac data interruption           reserved
+            public Byte controlBoardAbnormalStateFlag;  // Main control board (interface board) abnormal state flag
         };
 
-        //关节版本信息
+        // Joint version information
         [StructLayout(LayoutKind.Sequential)]
         public struct JointVersion
         {
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            char[] hw_version;  //硬件版本信息
+            char[] hw_version;  // Hardware version information
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
-            char[] sw_version; //固件版本信息
+            char[] sw_version; // Firmware version information
 
         };
 
-        //机械臂ID信息
+        // Joint ID information
         [StructLayout(LayoutKind.Sequential)]
         public struct JointProductID
         {
@@ -272,386 +272,386 @@ namespace csharp_example
 
         };
 
-        //设备信息
+        // Device information
         [StructLayout(LayoutKind.Sequential)]
         public struct RobotDevInfo
         {
-            Byte type;                       // 设备型号、芯片型号：上位机主站：0x01  接口板0x02
+            Byte type;                       // Device model, chip model: upper computer master: 0x01  interface board 0x02
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
-            char[] revision;                // 设备版本号，eg:V1.0
+            char[] revision;                // Device version number, eg: V1.0
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
-            char[] manu_id;                 // 厂家ID，"OUR "的ASCII码0x4F 55 52 00
+            char[] manu_id;                 // Manufacturer ID, "OUR " ASCII code 0x4F 55 52 00
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
-            char[] joint_type;              // 机械臂类型
+            char[] joint_type;              // Robot type
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            JointVersion[] joint_ver;        // 机械臂关节及工具端信息
+            JointVersion[] joint_ver;        // Robot joint and tool end information
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)]
-            char[] desc;                    // 设备描述字符串以0x00结束
+            char[] desc;                    // Device description string ends with 0x00
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            JointProductID[] jointProductID; // 关节ID信息
+            JointProductID[] jointProductID; // Joint ID information
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
-            char[] slave_version;           // 从设备版本号 - 字符串表示，如“V1.0.0
+            char[] slave_version;           // Slave device version number - string representation, e.g. "V1.0.0"
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
-            char[] extio_version;           // IO扩展板版本号 -字符串标志，如“V1.0.0
+            char[] extio_version;           // IO extension board version number - string representation, e.g. "V1.0.0"
 
         };
 
-        //初始化机械臂控制库
+        // Initialize robot control library
         [DllImport(service_interface_dll, EntryPoint = "rs_initialize", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_initialize();
 
-        //反初始化机械臂控制库
+        // Uninitialize robot control library
         [DllImport(service_interface_dll, EntryPoint = "rs_uninitialize", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_uninitialize();
 
-        //创建机械臂控制上下文句柄
+        // Create robot control context handle
         [DllImport(service_interface_dll, EntryPoint = "rs_create_context", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_create_context(ref UInt16 rshd);
 
-        //注销机械臂控制上下文句柄
+        // Destroy robot control context handle
         [DllImport(service_interface_dll, EntryPoint = "rs_destory_context", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_destory_context(UInt16 rshd);
 
-        //链接机械臂服务器
+        // Connect to robot server
         [DllImport(service_interface_dll, EntryPoint = "rs_login", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_login(UInt16 rshd, [MarshalAs(UnmanagedType.LPStr)] string addr, int port);
 
-        //断开机械臂服务器链接
+        // Disconnect from robot server
         [DllImport(service_interface_dll, EntryPoint = "rs_logout", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_logout(UInt16 rshd);
 
-        //初始化全局的运动属性
+        // Initialize global motion attributes
         [DllImport(service_interface_dll, EntryPoint = "rs_init_global_move_profile", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_init_global_move_profile(UInt16 rshd);
 
-        //设置六个关节轴动的最大速度（最大为180度/秒），注意如果没有特殊需求，6个关节尽量配置成一样！
+        // Set the maximum speed of six joint axes (maximum 180 degrees/sec), note that unless special requirements, all 6 joints should be configured the same!
         [DllImport(service_interface_dll, EntryPoint = "rs_set_global_joint_maxvelc", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_set_global_joint_maxvelc(UInt16 rshd, double[] max_velc);
 
-        //获取六个关节轴动的最大速度
+        // Get the maximum speed of six joint axes
         [DllImport(service_interface_dll, EntryPoint = "rs_get_global_joint_maxvelc", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_get_global_joint_maxvelc(UInt16 rshd, ref JointVelcAccParam max_velc);
 
-        //设置六个关节轴动的最大加速度 （十倍的最大速度），注意如果没有特殊需求，6个关节尽量配置成一样！
+        // Set the maximum acceleration of six joint axes (ten times the maximum speed), note that unless special requirements, all 6 joints should be configured the same!
         [DllImport(service_interface_dll, EntryPoint = "rs_set_global_joint_maxacc", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_set_global_joint_maxacc(UInt16 rshd, double[] max_acc);
 
-        //获取六个关节轴动的最大加速度
+        // Get the maximum acceleration of six joint axes
         [DllImport(service_interface_dll, EntryPoint = "rs_get_global_joint_maxacc", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_get_global_joint_maxacc(UInt16 rshd, ref JointVelcAccParam max_acc);
 
-        //设置机械臂末端最大线加速度
+        // Set robot end maximum linear acceleration
         [DllImport(service_interface_dll, EntryPoint = "rs_set_global_end_max_line_acc", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_set_global_end_max_line_acc(UInt16 rshd, double max_acc);
 
-        //设置机械臂末端最大线速度
+        // Set robot end maximum linear speed
         [DllImport(service_interface_dll, EntryPoint = "rs_set_global_end_max_line_velc", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_set_global_end_max_line_velc(UInt16 rshd, double max_velc);
 
-        //获取机械臂末端最大线加速度
+        // Get robot end maximum linear acceleration
         [DllImport(service_interface_dll, EntryPoint = "rs_get_global_end_max_line_acc", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_get_global_end_max_line_acc(UInt16 rshd, ref double max_acc);
 
-        //获取机械臂末端最大线速度
+        // Get robot end maximum linear speed
         [DllImport(service_interface_dll, EntryPoint = "rs_get_global_end_max_line_velc", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_get_global_end_max_line_velc(UInt16 rshd, ref double max_velc);
 
-        //设置机械臂末端最大角加速度
+        // Set robot end maximum angular acceleration
         [DllImport(service_interface_dll, EntryPoint = "rs_set_global_end_max_angle_acc", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_set_global_end_max_angle_acc(UInt16 rshd, double max_acc);
 
-        //设置机械臂末端最大角速度
+        // Set robot end maximum angular speed
         [DllImport(service_interface_dll, EntryPoint = "rs_set_global_end_max_angle_velc", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_set_global_end_max_angle_velc(UInt16 rshd, double max_velc);
 
-        //获取机械臂末端最大角加速度
+        // Get robot end maximum angular acceleration
         [DllImport(service_interface_dll, EntryPoint = "rs_get_global_end_max_angle_acc", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_get_global_end_max_angle_acc(UInt16 rshd, ref double max_acc);
 
-        //获取机械臂末端最大角加速度
+        // Get robot end maximum angular speed
         [DllImport(service_interface_dll, EntryPoint = "rs_get_global_end_max_angle_velc", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_get_global_end_max_angle_velc(UInt16 rshd, ref double max_velc);
 
-        //设置用户坐标系
+        // Set user coordinate system
         [DllImport(service_interface_dll, EntryPoint = "rs_set_user_coord", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_set_user_coord(UInt16 rshd, ref CoordCalibrate user_coord);
 
-        //设置基座坐标系
+        // Set base coordinate system
         [DllImport(service_interface_dll, EntryPoint = "rs_set_base_coord", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_set_base_coord(UInt16 rshd);
 
-        //机械臂轴动
+        // Robot joint movement
         [DllImport(service_interface_dll, EntryPoint = "rs_move_joint", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_move_joint(UInt16 rshd, double[] joint_radia, bool isblock);
 
-        //机械臂直线运动
+        // Robot linear movement
         [DllImport(service_interface_dll, EntryPoint = "rs_move_line", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_move_line(UInt16 rshd, double[] joint_radia, bool isblock);
 
-        //机械臂直线运动
+        // Robot linear movement
         [DllImport(service_interface_dll, EntryPoint = "rs_move_rotate_to_waypoint", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_move_rotate_to_waypoint(UInt16 rshd, ref wayPoint_S target_waypoint, bool isblock);
 
-        //保持当前位置变换姿态做旋转运动
+        // Keep current position and perform rotation movement by changing orientation
         [DllImport(service_interface_dll, EntryPoint = "rs_move_rotate", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_move_rotate(UInt16 rshd, ref CoordCalibrate user_coord, ref MoveRotateAxis rotate_axis, double rotate_angle, bool isblock);
 
-        //根据当前路点信息获取姿态旋转变换目标路点
+        // Get target waypoint by orientation rotation transformation based on current waypoint information
         [DllImport(service_interface_dll, EntryPoint = "rs_get_rotate_target_waypiont", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_get_rotate_target_waypiont(UInt16 rshd, ref wayPoint_S source_waypoint, double[] rotate_axis_on_basecoord, double rotate_angle, ref wayPoint_S target_waypoint);
 
-        //将用户坐标系下描述的坐标轴变换到基坐标系下描述
+        // Transform the coordinate axis described in user coordinate system to base coordinate system
         [DllImport(service_interface_dll, EntryPoint = "rs_get_rotateaxis_user_to_Base", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_get_rotateaxis_user_to_Base(UInt16 rshd, ref Ori ori_usercoord, double[] rotate_axis_on_usercoord, double[] rotate_axis_on_basecoord);
 
-        //根据位置获取目标路点信息(获取基于基座标下的目标路点通过基于用户坐标系的位置，目标路点保持起点姿态)
+        // Get target waypoint information by position (get target waypoint based on base coordinate system through position based on user coordinate system, target waypoint keeps the starting orientation)
         [DllImport(service_interface_dll, EntryPoint = "rs_get_target_waypoint_by_position", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_get_target_waypoint_by_position(UInt16 rshd, ref wayPoint_S source_waypoint_on_basecoord, ref CoordCalibrate usercoord, ref Pos tool_End_Position, ref ToolInEndDesc toolInEndDesc, ref wayPoint_S target_waypoint_on_basecoord);
 
-        //清除所有已经设置的全局路点
+        // Clear all set global waypoints
         [DllImport(service_interface_dll, EntryPoint = "rs_remove_all_waypoint", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_remove_all_waypoint(UInt16 rshd);
 
-        //添加全局路点用于轨迹运动
+        // Add global waypoint for trajectory movement
         [DllImport(service_interface_dll, EntryPoint = "rs_add_waypoint", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_add_waypoint(UInt16 rshd, double[] joint_radia);
 
-        //设置交融半径
+        // Set blend radius
         [DllImport(service_interface_dll, EntryPoint = "rs_set_blend_radius", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_set_blend_radius(UInt16 rshd, double radius);
 
-        //设置圆运动圈数
+        // Set number of circular loops
         [DllImport(service_interface_dll, EntryPoint = "rs_set_circular_loop_times", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_set_circular_loop_times(UInt16 rshd, int times);
 
-        //检查用户坐标系参数设置是否合理
+        // Check if user coordinate system parameters are reasonable
         [DllImport(service_interface_dll, EntryPoint = "rs_check_user_coord", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_check_user_coord(UInt16 rshd, ref CoordCalibrate user_coord);
 
-        //用户坐标系标定
+        // User coordinate system calibration
         [DllImport(service_interface_dll, EntryPoint = "rs_user_coord_calibrate", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_user_coord_calibrate(UInt16 rshd, ref CoordCalibrate user_coord, double[] bInWPos, double[] bInWOri, double[] wInBPos);
 
-        //工具标定
+        // Tool calibration
         [DllImport(service_interface_dll, EntryPoint = "rs_tool_calibration", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_tool_calibration(UInt16 rshd, ref ToolCalibrate toolCalibrate, ref ToolInEndDesc toolInEndDesc);
 
-        //设置基于基座标系运动偏移量
+        // Set movement offset based on base coordinate system
         [DllImport(service_interface_dll, EntryPoint = "rs_set_relative_offset_on_base", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_set_relative_offset_on_base(UInt16 rshd, ref MoveRelative relative);
 
-        //设置基于用户标系运动偏移量
+        // Set movement offset based on user coordinate system
         [DllImport(service_interface_dll, EntryPoint = "rs_set_relative_offset_on_user", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_set_relative_offset_on_user(UInt16 rshd, ref MoveRelative relative, ref CoordCalibrate user_coord);
 
-        //取消提前到位设置
+        // Cancel arrival ahead setting
         [DllImport(service_interface_dll, EntryPoint = "rs_set_no_arrival_ahead", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_set_no_arrival_ahead(UInt16 rshd);
 
-        //设置距离模式下的提前到位距离
+        // Set arrival ahead distance in distance mode
         [DllImport(service_interface_dll, EntryPoint = "rs_set_arrival_ahead_distance", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_set_arrival_ahead_distance(UInt16 rshd, double distance);
 
-        //设置时间模式下的提前到位时间
+        // Set arrival ahead time in time mode
         [DllImport(service_interface_dll, EntryPoint = "rs_set_arrival_ahead_time", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_set_arrival_ahead_time(UInt16 rshd, double sec);
 
-        //轨迹运动
+        // Trajectory movement
         [DllImport(service_interface_dll, EntryPoint = "rs_move_track", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_move_track(UInt16 rshd, int sub_move_mode, bool isblock);
 
-        //保持当前位姿通过直线运动的方式运动到目标位置
+        // Move to target position by linear movement while keeping current pose
         [DllImport(service_interface_dll, EntryPoint = "rs_move_line_to", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_move_line_to(UInt16 rshd, ref Pos target, ref ToolInEndDesc tool, bool isblock);
 
-        //保持当前位姿通过关节运动的方式运动到目标位置
+        // Move to target position by joint movement while keeping current pose
         [DllImport(service_interface_dll, EntryPoint = "rs_move_joint_to", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_move_joint_to(UInt16 rshd, ref Pos target, ref ToolInEndDesc tool, bool isblock);
 
-        //获取机械臂当前位置信息
+        // Get current robot position information
         [DllImport(service_interface_dll, EntryPoint = "rs_get_current_waypoint", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_get_current_waypoint(UInt16 rshd, ref wayPoint_S waypoint);
 
-        //正解
+        // Forward kinematics
         [DllImport(service_interface_dll, EntryPoint = "rs_forward_kin", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_forward_kin(UInt16 rshd, double[] joint_radia, ref wayPoint_S waypoint);
 
-        //逆解
+        // Inverse kinematics
         [DllImport(service_interface_dll, EntryPoint = "rs_inverse_kin", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_inverse_kin(UInt16 rshd, double[] joint_radia, ref Pos pos, ref Ori ori, ref wayPoint_S waypoint);
 
-        //逆解 （最多八组解）
+        // Inverse kinematics (up to eight solutions)
         [DllImport(service_interface_dll, EntryPoint = "rs_inverse_kin_closed_form", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_inverse_kin_closed_form(UInt16 rshd, ref Pos pos, ref Ori ori, ref ik_solutions waypoint);
 
-        //四元素转欧拉角
+        // RPY to quaternion
         [DllImport(service_interface_dll, EntryPoint = "rs_rpy_to_quaternion", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_rpy_to_quaternion(UInt16 rshd, ref Rpy rpy, ref Ori ori);
 
-        //欧拉角转四元素
+        // Quaternion to RPY
         [DllImport(service_interface_dll, EntryPoint = "rs_quaternion_to_rpy", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_quaternion_to_rpy(UInt16 rshd, ref Ori ori, ref Rpy rpy);
 
-        //基座坐标系转用户坐标系
+        // Base coordinate system to user coordinate system
         [DllImport(service_interface_dll, EntryPoint = "rs_base_to_user", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_base_to_user(UInt16 rshd, ref Pos pos_onbase, ref Ori ori_onbase, ref CoordCalibrate user_coord, ref ToolInEndDesc tool_pos, ref Pos pos_onuser, ref Ori ori_onuser);
 
-        //用户坐标系转基座坐标系
+        // User coordinate system to base coordinate system
         [DllImport(service_interface_dll, EntryPoint = "rs_user_to_base", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_user_to_base(UInt16 rshd, ref Pos pos_onuser, ref Ori ori_onuser, ref CoordCalibrate user_coord, ref ToolInEndDesc tool_pos, ref Pos pos_onbase, ref Ori ori_onbase);
 
-        //基坐标系转基座标得到工具末端点的位置和姿态
+        // Base coordinate system to base coordinate to get tool end position and orientation
         [DllImport(service_interface_dll, EntryPoint = "rs_base_to_base_additional_tool", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_base_to_base_additional_tool(UInt16 rshd, ref Pos flange_center_pos_onbase, ref Ori flange_center_ori_onbase, ref ToolInEndDesc tool_pos, ref Pos tool_end_pos_onbase, ref Ori tool_end_ori_onbase);
 
-        //设置工具的运动学参数
+        // Set tool kinematic parameters
         [DllImport(service_interface_dll, EntryPoint = "rs_set_tool_end_param", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_set_tool_end_param(UInt16 rshd, ref ToolInEndDesc tool);
 
-        //设置无工具的动力学参数
+        // Set dynamics parameters for no tool
         [DllImport(service_interface_dll, EntryPoint = "rs_set_none_tool_dynamics_param", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_set_none_tool_dynamics_param(UInt16 rshd);
 
-        //根据接口板IO类型和地址设置IO状态
+        // Set IO status by interface board IO type and address
         [DllImport(service_interface_dll, EntryPoint = "rs_set_board_io_status_by_addr", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_set_board_io_status_by_addr(UInt16 rshd, int io_type, int addr, double val);
 
-        //根据接口板IO类型和地址获取IO状态
+        // Get IO status by interface board IO type and address
         [DllImport(service_interface_dll, EntryPoint = "rs_get_board_io_status_by_addr", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_get_board_io_status_by_addr(UInt16 rshd, int io_type, int addr, ref double val);
 
-        //设置工具端IO状态
+        // Set tool end IO status
         [DllImport(service_interface_dll, EntryPoint = "rs_set_tool_do_status", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_set_tool_do_status(UInt16 rshd, string name, int val);
 
-        //获取工具端IO状态
+        // Get tool end IO status
         [DllImport(service_interface_dll, EntryPoint = "rs_get_tool_io_status", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_get_tool_io_status(UInt16 rshd, string name, ref double val);
 
-        //设置工具端电源电压类型
+        // Set tool end power voltage type
         [DllImport(service_interface_dll, EntryPoint = "rs_set_tool_power_type", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_set_tool_power_type(UInt16 rshd, int type);
 
-        //获取工具端电源电压类型
+        // Get tool end power voltage type
         [DllImport(service_interface_dll, EntryPoint = "rs_get_tool_power_type", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_get_tool_power_type(UInt16 rshd, ref int type);
 
-        //设置工具端数字量IO的类型
+        // Set tool end digital IO type
         [DllImport(service_interface_dll, EntryPoint = "rs_set_tool_io_type", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_set_tool_io_type(UInt16 rshd, int addr, int type);
 
-        //设置工具的动力学参数
+        // Set tool dynamics parameters
         [DllImport(service_interface_dll, EntryPoint = "rs_set_tool_dynamics_param", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_set_tool_dynamics_param(UInt16 rshd, ref ToolDynamicsParam tool);
 
-        //获取工具的动力学参数
+        // Get tool dynamics parameters
         [DllImport(service_interface_dll, EntryPoint = "rs_get_tool_dynamics_param", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_get_tool_dynamics_param(UInt16 rshd, ref ToolDynamicsParam tool);
 
-        //设置无工具运动学参数
+        // Set kinematic parameters for no tool
         [DllImport(service_interface_dll, EntryPoint = "rs_set_none_tool_kinematics_param", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_set_none_tool_kinematics_param(UInt16 rshd);
 
-        //设置工具的运动学参数
+        // Set tool kinematic parameters
         [DllImport(service_interface_dll, EntryPoint = "rs_set_tool_kinematics_param", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_set_tool_kinematics_param(UInt16 rshd, ref ToolInEndDesc tool);
 
-        //获取工具的运动学参数
+        // Get tool kinematic parameters
         [DllImport(service_interface_dll, EntryPoint = "rs_get_tool_kinematics_param", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_get_tool_kinematics_param(UInt16 rshd, ref ToolInEndDesc tool);
 
-        //启动机械臂
+        // Start robot
         [DllImport(service_interface_dll, EntryPoint = "rs_robot_startup", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_robot_startup(UInt16 rshd, ref ToolDynamicsParam tool, byte colli_class, bool read_pos, bool static_colli_detect, int board_maxacc, ref int state);
 
-        //关闭机械臂
+        // Shutdown robot
         [DllImport(service_interface_dll, EntryPoint = "rs_robot_shutdown", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_robot_shutdown(UInt16 rshd);
 
-        //关闭机械臂
+        // Shutdown robot
         [DllImport(service_interface_dll, EntryPoint = "rs_robot_control", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_robot_control(UInt16 rshd, int robotControlCommand);
 
-        //通知机械臂工程启动，服务器同时开始检测安全IO
+        // Notify robot project startup, server starts detecting safety IO
         [DllImport(service_interface_dll, EntryPoint = "rs_project_startup", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_project_startup(UInt16 rshd);
 
-        //通知机械臂工程停止，服务器停止检测安全IO
+        // Notify robot project stop, server stops detecting safety IO
         [DllImport(service_interface_dll, EntryPoint = "rs_project_stop", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_project_stop(UInt16 rshd);
 
-        //停止机械臂运动
+        // Stop robot movement
         [DllImport(service_interface_dll, EntryPoint = "rs_move_stop", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_move_stop(UInt16 rshd);
 
-        //停止机械臂运动
+        // Stop robot movement
         [DllImport(service_interface_dll, EntryPoint = "rs_move_fast_stop", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_move_fast_stop(UInt16 rshd);
 
-        //暂停机械臂运动
+        // Pause robot movement
         [DllImport(service_interface_dll, EntryPoint = "rs_move_pause", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_move_pause(UInt16 rshd);
 
-        //暂停后回复机械臂运动
+        // Resume robot movement after pause
         [DllImport(service_interface_dll, EntryPoint = "rs_move_continue", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_move_continue(UInt16 rshd);
 
-        //机械臂碰撞后恢复
+        // Recover robot after collision
         [DllImport(service_interface_dll, EntryPoint = "rs_collision_recover", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_collision_recover(UInt16 rshd);
 
-        //获取机械臂当前状态
+        // Get current robot state
         [DllImport(service_interface_dll, EntryPoint = "rs_get_robot_state", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_get_robot_state(UInt16 rshd, ref int state);
 
-        //获取关节状态信息
+        // Get joint status information
         [DllImport(service_interface_dll, EntryPoint = "rs_get_joint_status", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_get_joint_status(UInt16 rshd, IntPtr pBuff);
 
-        //获取机械臂诊断信息
+        // Get robot diagnosis information
         [DllImport(service_interface_dll, EntryPoint = "rs_get_diagnosis_info", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_get_diagnosis_info(UInt16 rshd, ref RobotDiagnosis robotDiagnosis);
 
-        //获取机械臂诊断信息
+        // Get robot diagnosis information
         [DllImport(service_interface_dll, EntryPoint = "rs_get_device_info", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_get_device_info(UInt16 rshd, ref RobotDevInfo dev);
 
-        //设置机械臂服务器工作模式
+        // Set robot server work mode
         [DllImport(service_interface_dll, EntryPoint = "rs_set_work_mode", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_set_work_mode(UInt16 rshd, int state);
 
-        //获取机械臂服务器当前工作模式
+        // Get current robot server work mode
         [DllImport(service_interface_dll, EntryPoint = "rs_get_work_mode", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_get_work_mode(UInt16 rshd, ref int state);
 
-        //设置机械臂碰撞等级
+        // Set robot collision level
         [DllImport(service_interface_dll, EntryPoint = "rs_set_collision_class", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_set_collision_class(UInt16 rshd, int grade);
 
-        //获取当前碰撞等级
+        // Get current collision level
         [DllImport(service_interface_dll, EntryPoint = "rs_get_collision_class", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_get_collision_class(UInt16 rshd, ref int grade);
 
-        //根据错误号返回错误信息
+        // Return error information by error code
         [DllImport(service_interface_dll, EntryPoint = "rs_get_error_information_by_errcode", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr rs_get_error_information_by_errcode(UInt16 rshd, int err_code);
 
-        //获取socket链接状态
+        // Get socket connection status
         [DllImport(service_interface_dll, EntryPoint = "rs_get_socket_status", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_get_socket_status(UInt16 rshd, ref byte connected);
 
-        //设置是否允许实时路点信息推送
+        // Set whether to allow real-time waypoint information push
         [DllImport(service_interface_dll, EntryPoint = "rs_enable_push_realtime_roadpoint", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rs_enable_push_realtime_roadpoint(UInt16 rshd, bool enable);
 
-        //实时路点回调函数
+        // Real-time waypoint callback function
         [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Cdecl)]
         public delegate void REALTIME_ROADPOINT_CALLBACK(ref wayPoint_S waypoint, IntPtr arg);
 
         [DllImport(service_interface_dll, CallingConvention = CallingConvention.Cdecl)]
         public static extern void rs_setcallback_realtime_roadpoint(UInt16 rshd, [MarshalAs(UnmanagedType.FunctionPtr)] REALTIME_ROADPOINT_CALLBACK CurrentPositionCallback, IntPtr arg);
 
-        //实时末端速度回调函数
+        // Real-time end speed callback function
         [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Cdecl)]
         public delegate void REALTIME_ENDSPEED_CALLBACK(double speed, IntPtr arg);
 
@@ -659,14 +659,14 @@ namespace csharp_example
         public static extern void rs_setcallback_realtime_end_speed(UInt16 rshd, [MarshalAs(UnmanagedType.FunctionPtr)] REALTIME_ENDSPEED_CALLBACK CurrentEndSpeedCallback, IntPtr arg);
 
 
-        //机械臂事件回调
+        // Robot event callback
         [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Cdecl)]
         public delegate void ROBOT_EVENT_CALLBACK(ref RobotEventInfo rs_event, IntPtr arg);
 
         [DllImport(service_interface_dll, CallingConvention = CallingConvention.Cdecl)]
         public static extern void rs_setcallback_robot_event(UInt16 rshd, [MarshalAs(UnmanagedType.FunctionPtr)] ROBOT_EVENT_CALLBACK RobotEventCallback, IntPtr arg);
 
-        //机械臂关节状态回调
+        // Robot joint status callback
         [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Cdecl)]
         public delegate void ROBOT_JOINT_STATUS_CALLBACK(IntPtr pBuff, int size, IntPtr arg);
 
@@ -674,19 +674,19 @@ namespace csharp_example
         public static extern void rs_setcallback_realtime_joint_status(UInt16 rshd, [MarshalAs(UnmanagedType.FunctionPtr)] ROBOT_JOINT_STATUS_CALLBACK RobotJointStatusCallback, IntPtr arg);
 
 
-        //位置回调
+        // Position callback
         public static void CurrentPositionCallback(ref wayPoint_S waypoint, IntPtr arg)
         {
             PrintWaypoint(waypoint);
         }
-        //速度回调
+        // Speed callback
         public static void CurrentEndSpeedCallback(double speed, IntPtr arg)
         {
             Console.Out.WriteLine("CurrentSpeed:{0}\n", speed);
         }
 
 
-        //关节状态回调
+        // Joint status callback
         public static void CurrentJointStatusCallback(IntPtr pBuff, int size, IntPtr arg)
         {
             cSharpBinding.JointStatus[] jointStatus = new cSharpBinding.JointStatus[6];
@@ -708,7 +708,7 @@ namespace csharp_example
         }
 
 
-        //打印路点信息
+        // Print waypoint information
         public static void PrintWaypoint(wayPoint_S point)
         {
             Console.Out.WriteLine("---------------------------------------------------------------------------------------");
@@ -733,107 +733,107 @@ namespace csharp_example
     public class cSharpBinding_RPC
     {
         const string service_interface_dll = GlobalConstants.service_interface_dll;
-        //初始化机械臂控制库
+        // Initialize robot control library
         [DllImport(service_interface_dll, EntryPoint = "rpc_create_client", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr rpc_create_client(int mode);
 
-        //反初始化机械臂控制库
+        // Uninitialize robot control library
         [DllImport(service_interface_dll, EntryPoint = "rpc_destroy_client", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern void rpc_destroy_client(IntPtr cli);
 
-        //设置日志处理器
+        // Set log handler
         [DllImport(service_interface_dll, EntryPoint = "rpc_setLogHandler", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern void rpc_setLogHandler(IntPtr cli, LogHandlerDelegate handler);
-        // 定义日志处理函数委托类型，需和C++中函数原型对应
+        // Define log handler delegate type, must match C++ function prototype
         public delegate void LogHandlerDelegate(int level, string filename, int line, string message);
 
-        //连接到RPC服务
+        // Connect to RPC service
         [DllImport(service_interface_dll, EntryPoint = "rpc_connect", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rpc_connect(IntPtr cli, [MarshalAs(UnmanagedType.LPStr)] string ip, int port);
 
-        //断开RPC连接
+        // Disconnect RPC
         [DllImport(service_interface_dll, EntryPoint = "rpc_disconnect", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rpc_disconnect(IntPtr cli);
 
-        //判断是否连接RPC
+        // Check if RPC is connected
         [DllImport(service_interface_dll, EntryPoint = "rpc_hasConnected", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern bool rpc_hasConnected(IntPtr cli);
 
-        //登录
+        // Login
         [DllImport(service_interface_dll, EntryPoint = "rpc_login", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rpc_login(IntPtr cli, [MarshalAs(UnmanagedType.LPStr)] string usrname, [MarshalAs(UnmanagedType.LPStr)] string passwd);
 
-        //登出
+        // Logout
         [DllImport(service_interface_dll, EntryPoint = "rpc_logout", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rpc_logout(IntPtr cli);
 
-        //判断是否登录
+        // Check if logged in
         [DllImport(service_interface_dll, EntryPoint = "rpc_hasLogined", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern bool rpc_hasLogined(IntPtr cli);
 
-        //设置RPC请求超时时间
+        // Set RPC request timeout
         [DllImport(service_interface_dll, EntryPoint = "rpc_setRequestTimeout", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rpc_setRequestTimeout(IntPtr cli, int timeout);
 
-        //设置事件处理
+        // Set event handler
         [DllImport(service_interface_dll, EntryPoint = "rpc_setEventHandler", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rpc_setEventHandler(IntPtr cli, EventCallbackDelegate cb);
-        // 定义事件回调委托类型，需根据实际C++中回调函数原型补充准确参数等定义
+        // Define event callback delegate type, must match actual C++ callback function prototype
         public delegate void EventCallbackDelegate();
 
-        //返回错误代码
+        // Return error code
         [DllImport(service_interface_dll, EntryPoint = "rpc_errorCode", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rpc_errorCode(IntPtr cli);
 
-        //设备关机
+        // Device shutdown
         [DllImport(service_interface_dll, EntryPoint = "rpc_shutdown", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rpc_shutdown(IntPtr cli);
 
-        //获取纯数学相关接口
+        // Get math related interface
         [DllImport(service_interface_dll, EntryPoint = "rpc_getMath", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr rpc_getMath(IntPtr cli);
 
-        //获取系统信息
+        // Get system info
         [DllImport(service_interface_dll, EntryPoint = "rpc_getSystemInfo", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr rpc_getSystemInfo(IntPtr cli);
 
-        //获取运行时接口
+        // Get runtime interface
         [DllImport(service_interface_dll, EntryPoint = "rpc_getRuntimeMachine", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr rpc_getRuntimeMachine(IntPtr cli);
 
-        //对外寄存器接口
+        // External register interface
         [DllImport(service_interface_dll, EntryPoint = "rpc_getRegisterControl", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr rpc_getRegisterControl(IntPtr cli);
 
-        //获取机器人列表
+        // Get robot list
         [DllImport(service_interface_dll, EntryPoint = "rpc_getRobotNames", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rpc_getRobotNames(IntPtr cli, IntPtr[] names);
 
-        //根据名字获取RobotInterfacePtr接口
+        // Get RobotInterfacePtr interface by name
         [DllImport(service_interface_dll, EntryPoint = "rpc_getRobotInterface", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr rpc_getRobotInterface(IntPtr cli, [MarshalAs(UnmanagedType.LPStr)] string name);
 
-        //获取外部轴列表
+        // Get external axis list
         [DllImport(service_interface_dll, EntryPoint = "rpc_getAxisNames", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rpc_getAxisNames(IntPtr cli, [MarshalAs(UnmanagedType.LPArray)] string[] names);
 
-        //获取外部轴接口
+        // Get external axis interface
         [DllImport(service_interface_dll, EntryPoint = "rpc_getAxisInterface", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr rpc_getAxisInterface(IntPtr cli, [MarshalAs(UnmanagedType.LPStr)] string name);
 
-        // 获取socket
+        // Get socket
         [DllImport(service_interface_dll, EntryPoint = "rpc_getSocket", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr rpc_getSocket(IntPtr cli);
 
-        // 获取Serial
+        // Get Serial
         [DllImport(service_interface_dll, EntryPoint = "rpc_getSerial", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr rpc_getSerial(IntPtr cli);
 
-        //获取同步运动接口
+        // Get sync move interface
         [DllImport(service_interface_dll, EntryPoint = "rpc_getSyncMove", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr rpc_getSyncMove(IntPtr cli, [MarshalAs(UnmanagedType.LPStr)] string name);
 
-        //获取告警信息接口
+        // Get alarm info interface
         [DllImport(service_interface_dll, EntryPoint = "rpc_getTrace", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr rpc_getTrace(IntPtr cli, [MarshalAs(UnmanagedType.LPStr)] string name);
 
@@ -845,83 +845,83 @@ namespace csharp_example
 
          const string service_interface_dll = GlobalConstants.service_interface_dll;
 
-        // 位姿相加函数封装
+        // Pose addition
         [DllImport(service_interface_dll, EntryPoint = "poseAdd", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int poseAdd(IntPtr h, [MarshalAs(UnmanagedType.LPArray)] double[] p1, [MarshalAs(UnmanagedType.LPArray)] double[] p2, [MarshalAs(UnmanagedType.LPArray)] double[] result);
 
-        // 位姿相减函数封装
+        // Pose subtraction
         [DllImport(service_interface_dll, EntryPoint = "poseSub", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int poseSub(IntPtr h, [MarshalAs(UnmanagedType.LPArray)] double[] p1, [MarshalAs(UnmanagedType.LPArray)] double[] p2, [MarshalAs(UnmanagedType.LPArray)] double[] result);
 
-        // 位姿插值函数封装
+        // Pose interpolation
         [DllImport(service_interface_dll, EntryPoint = "interpolatePose", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int interpolatePose(IntPtr h, [MarshalAs(UnmanagedType.LPArray)] double[] p1, [MarshalAs(UnmanagedType.LPArray)] double[] p2, double alpha, [MarshalAs(UnmanagedType.LPArray)] double[] result);
 
-        // 位姿变换函数封装
+        // Pose transformation
         [DllImport(service_interface_dll, EntryPoint = "poseTrans", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int poseTrans(IntPtr h, [MarshalAs(UnmanagedType.LPArray)] double[] pose_from, [MarshalAs(UnmanagedType.LPArray)] double[] pose_from_to, [MarshalAs(UnmanagedType.LPArray)] double[] result);
 
-        // 位姿逆变换函数封装
+        // Pose inverse transformation
         [DllImport(service_interface_dll, EntryPoint = "poseTransInv", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int poseTransInv(IntPtr h, [MarshalAs(UnmanagedType.LPArray)] double[] pose_from, [MarshalAs(UnmanagedType.LPArray)] double[] pose_to_from, [MarshalAs(UnmanagedType.LPArray)] double[] result);
 
-        // 位姿求逆函数封装
+        // Pose inversion
         [DllImport(service_interface_dll, EntryPoint = "poseInverse", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int poseInverse(IntPtr h, [MarshalAs(UnmanagedType.LPArray)] double[] pose, [MarshalAs(UnmanagedType.LPArray)] double[] result);
 
-        // 位姿距离计算函数封装
+        // Pose distance calculation
         [DllImport(service_interface_dll, EntryPoint = "poseDistance", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern double poseDistance(IntPtr h, [MarshalAs(UnmanagedType.LPArray)] double[] p1, [MarshalAs(UnmanagedType.LPArray)] double[] p2);
 
-        // 位姿角度距离计算函数封装
+        // Pose angle distance calculation
         [DllImport(service_interface_dll, EntryPoint = "poseAngleDistance", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern double poseAngleDistance(IntPtr h, [MarshalAs(UnmanagedType.LPArray)] double[] p1, [MarshalAs(UnmanagedType.LPArray)] double[] p2);
 
-        // 位姿相等判断函数封装
+        // Pose equality check
         [DllImport(service_interface_dll, EntryPoint = "poseEqual", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern bool poseEqual(IntPtr h, [MarshalAs(UnmanagedType.LPArray)] double[] p1, [MarshalAs(UnmanagedType.LPArray)] double[] p2, double eps);
 
-        // 参考系转换函数封装
+        // Reference frame transformation
         [DllImport(service_interface_dll, EntryPoint = "transferRefFrame", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int transferRefFrame(IntPtr h, [MarshalAs(UnmanagedType.LPArray)] double[] F_b_a_old, [MarshalAs(UnmanagedType.LPArray)] double[] V_in_a, int type, [MarshalAs(UnmanagedType.LPArray)] double[] result);
 
-        // 位姿旋转函数封装
+        // Pose rotation
         [DllImport(service_interface_dll, EntryPoint = "poseRotation", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int poseRotation(IntPtr h, [MarshalAs(UnmanagedType.LPArray)] double[] pose, [MarshalAs(UnmanagedType.LPArray)] double[] rotv, [MarshalAs(UnmanagedType.LPArray)] double[] result);
 
-        // 欧拉角转四元数函数封装
+        // RPY to quaternion
         [DllImport(service_interface_dll, EntryPoint = "rpyToQuaternion", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rpyToQuaternion(IntPtr h, [MarshalAs(UnmanagedType.LPArray)] double[] rpy, [MarshalAs(UnmanagedType.LPArray)] double[] result);
 
-        // 四元数转欧拉角函数封装
+        // Quaternion to RPY
         [DllImport(service_interface_dll, EntryPoint = "quaternionToRpy", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int quaternionToRpy(IntPtr h, [MarshalAs(UnmanagedType.LPArray)] double[] quant, [MarshalAs(UnmanagedType.LPArray)] double[] result);
 
-        // TCP偏移识别函数封装
+        // TCP offset identification
         [DllImport(service_interface_dll, EntryPoint = "tcpOffsetIdentify", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int tcpOffsetIdentify(IntPtr h, [MarshalAs(UnmanagedType.LPArray)] double[] poses, int rows, [MarshalAs(UnmanagedType.LPArray)] double[] result);
 
-        // 坐标校准函数封装
+        // Coordinate calibration
         [DllImport(service_interface_dll, EntryPoint = "calibrateCoordinate", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int calibrateCoordinate(IntPtr h, [MarshalAs(UnmanagedType.LPArray)] double[] poses, int rows, int type, [MarshalAs(UnmanagedType.LPArray)] double[] result);
 
-        // 计算圆上第四点函数封装
+        // Calculate fourth point on circle
         [DllImport(service_interface_dll, EntryPoint = "calculateCircleFourthPoint", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int calculateCircleFourthPoint(IntPtr h, [MarshalAs(UnmanagedType.LPArray)] double[] p1, [MarshalAs(UnmanagedType.LPArray)] double[] p2, [MarshalAs(UnmanagedType.LPArray)] double[] p3, int mode, [MarshalAs(UnmanagedType.LPArray)] double[] result);
 
-        // 力的变换函数封装
+        // Force transformation
         [DllImport(service_interface_dll, EntryPoint = "forceTrans", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int forceTrans(IntPtr h, [MarshalAs(UnmanagedType.LPArray)] double[] pose_a_in_b, [MarshalAs(UnmanagedType.LPArray)] double[] force_in_a, [MarshalAs(UnmanagedType.LPArray)] double[] result);
 
-        // 根据传感器距离获取位姿增量函数封装
+        // Get pose delta by sensor distance
         [DllImport(service_interface_dll, EntryPoint = "getDeltaPoseBySensorDistance", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int getDeltaPoseBySensorDistance(IntPtr h, [MarshalAs(UnmanagedType.LPArray)] double[] distances, double position, double radius, double track_scale, [MarshalAs(UnmanagedType.LPArray)] double[] result);
 
-        // 位姿增量变换函数封装
+        // Delta pose transformation
         [DllImport(service_interface_dll, EntryPoint = "deltaPoseTrans", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int deltaPoseTrans(IntPtr h, [MarshalAs(UnmanagedType.LPArray)] double[] pose_a_in_b, [MarshalAs(UnmanagedType.LPArray)] double[] ft_in_a, [MarshalAs(UnmanagedType.LPArray)] double[] result);
 
-        // 位姿增量相加函数封装
+        // Delta pose addition
         [DllImport(service_interface_dll, EntryPoint = "deltaPoseAdd", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int deltaPoseAdd(IntPtr h, [MarshalAs(UnmanagedType.LPArray)] double[] pose_a_in_b, [MarshalAs(UnmanagedType.LPArray)] double[] v_in_b, [MarshalAs(UnmanagedType.LPArray)] double[] result);
     }
@@ -933,220 +933,219 @@ namespace csharp_example
          const string service_interface_dll = GlobalConstants.service_interface_dll;
 
 
-        // 获取布尔型输入值函数封装
+        // Get boolean input value function wrapper
         [DllImport(service_interface_dll, EntryPoint = "getBoolInput", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern bool getBoolInput(IntPtr h, int address);
 
-        // 设置布尔型输入值函数封装
+        // Set boolean input value function wrapper
         [DllImport(service_interface_dll, EntryPoint = "setBoolInput", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int setBoolInput(IntPtr h, int address, bool value);
 
-        // 获取Int32型输入值函数封装
+        // Get Int32 input value function wrapper
         [DllImport(service_interface_dll, EntryPoint = "getInt32Input", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int getInt32Input(IntPtr h, int address);
 
-        // 设置Int32型输入值函数封装
+        // Set Int32 input value function wrapper
         [DllImport(service_interface_dll, EntryPoint = "setInt32Input", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int setInt32Input(IntPtr h, int address, int value);
 
-        // 获取Float型输入值函数封装
+        // Get Float input value function wrapper
         [DllImport(service_interface_dll, EntryPoint = "getFloatInput", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern float getFloatInput(IntPtr h, int address);
 
-        // 设置Float型输入值函数封装
+        // Set Float input value function wrapper
         [DllImport(service_interface_dll, EntryPoint = "setFloatInput", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int setFloatInput(IntPtr h, int address, float value);
 
-        // 获取Double型输入值函数封装
+        // Get Double input value function wrapper
         [DllImport(service_interface_dll, EntryPoint = "getDoubleInput", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern double getDoubleInput(IntPtr h, int address);
 
-        // 设置Double型输入值函数封装
+        // Set Double input value function wrapper
         [DllImport(service_interface_dll, EntryPoint = "setDoubleInput", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int setDoubleInput(IntPtr h, int address, double value);
 
-        // 获取布尔型输出值函数封装
+        // Get boolean output value function wrapper
         [DllImport(service_interface_dll, EntryPoint = "getBoolOutput", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern bool getBoolOutput(IntPtr h, int address);
 
-        // 设置布尔型输出值函数封装
+        // Set boolean output value function wrapper
         [DllImport(service_interface_dll, EntryPoint = "setBoolOutput", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int setBoolOutput(IntPtr h, int address, bool value);
 
-        // 获取Int32型输出值函数封装
+        // Get Int32 output value function wrapper
         [DllImport(service_interface_dll, EntryPoint = "getInt32Output", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int getInt32Output(IntPtr h, int address);
 
-        // 设置Int32型输出值函数封装
+        // Set Int32 output value function wrapper
         [DllImport(service_interface_dll, EntryPoint = "setInt32Output", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int setInt32Output(IntPtr h, int address, int value);
 
-        // 获取Float型输出值函数封装
+        // Get Float output value function wrapper
         [DllImport(service_interface_dll, EntryPoint = "getFloatOutput", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern float getFloatOutput(IntPtr h, int address);
 
-        // 设置Float型输出值函数封装
+        // Set Float output value function wrapper
         [DllImport(service_interface_dll, EntryPoint = "setFloatOutput", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int setFloatOutput(IntPtr h, int address, float value);
 
-        // 获取Double型输出值函数封装
+        // Get Double output value function wrapper
         [DllImport(service_interface_dll, EntryPoint = "getDoubleOutput", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern double getDoubleOutput(IntPtr h, int address);
 
-        // 设置Double型输出值函数封装
+        // Set Double output value function wrapper
         [DllImport(service_interface_dll, EntryPoint = "setDoubleOutput", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int setDoubleOutput(IntPtr h, int address, double value);
 
-        // 获取Int16型寄存器值函数封装
+        // Get Int16 register value function wrapper
         [DllImport(service_interface_dll, EntryPoint = "getInt16Register", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern Int16 getInt16Register(IntPtr h, int address);
 
-        // 设置Int16型寄存器值函数封装
+        // Set Int16 register value function wrapper
         [DllImport(service_interface_dll, EntryPoint = "setInt16Register", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int setInt16Register(IntPtr h, int address, Int16 value);
 
-        // 检查变量是否更新函数封装
+        // Check if variable is updated function wrapper
         [DllImport(service_interface_dll, EntryPoint = "variableUpdated", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern bool variableUpdated(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string key, UInt64 since);
 
-        // 检查是否存在指定名称变量函数封装
+        // Check if variable with specified name exists function wrapper
         [DllImport(service_interface_dll, EntryPoint = "hasNamedVariable", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern bool hasNamedVariable(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string key);
 
-        // 获取指定名称变量类型函数封装
+        // Get variable type by specified name function wrapper
         [DllImport(service_interface_dll, EntryPoint = "getNamedVariableType", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int getNamedVariableType(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string key, [MarshalAs(UnmanagedType.LPStr)] string result);
 
-        // 获取指定名称布尔型变量值（带默认值）函数封装
+        // Get boolean variable value by specified name (with default value) function wrapper
         [DllImport(service_interface_dll, EntryPoint = "getBool", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern bool getBool(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string key, bool default_value);
 
-        // 设置指定名称布尔型变量值函数封装
+        // Set boolean variable value by specified name function wrapper
         [DllImport(service_interface_dll, EntryPoint = "setBool", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int setBool(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string key, bool value);
 
-        // 获取指定名称字符向量变量值（带默认值）函数封装
+        // Get char vector variable value by specified name (with default value) function wrapper
         [DllImport(service_interface_dll, EntryPoint = "getVecChar", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int getVecChar(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string key, [MarshalAs(UnmanagedType.LPStr)] string default_value, [MarshalAs(UnmanagedType.LPStr)] string result);
 
-        // 设置指定名称字符向量变量值函数封装
+        // Set char vector variable value by specified name function wrapper
         [DllImport(service_interface_dll, EntryPoint = "setVecChar", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int setVecChar(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string key, [MarshalAs(UnmanagedType.LPStr)] string value);
 
-        // 获取指定名称Int32型变量值（带默认值）函数封装
+        // Get Int32 variable value by specified name (with default value) function wrapper
         [DllImport(service_interface_dll, EntryPoint = "getInt32", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int getInt32(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string key, int default_value);
 
-        // 设置指定名称Int32型变量值函数封装
+        // Set Int32 variable value by specified name function wrapper
         [DllImport(service_interface_dll, EntryPoint = "setInt32", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int setInt32(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string key, int value);
 
-
-        // 获取指定名称Int32向量型变量值（带默认值）函数封装
+        // Get Int32 vector variable value by specified name (with default value) function wrapper
         [DllImport(service_interface_dll, EntryPoint = "getVecInt32", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int getVecInt32(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string key, [MarshalAs(UnmanagedType.LPArray)] Int32[] default_value, [MarshalAs(UnmanagedType.LPArray)] int[] result);
 
-        // 设置指定名称Int32向量型变量值函数封装
+        // Set Int32 vector variable value by specified name function wrapper
         [DllImport(service_interface_dll, EntryPoint = "setVecInt32", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int setVecInt32(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string key, [MarshalAs(UnmanagedType.LPArray)] Int32[] value);
 
-        // 获取指定名称Float型变量值（带默认值）函数封装
+        // Get Float variable value by specified name (with default value) function wrapper
         [DllImport(service_interface_dll, EntryPoint = "getFloat", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern float getFloat(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string key, float default_value);
 
-        // 设置指定名称Float型变量值函数封装
+        // Set Float variable value by specified name function wrapper
         [DllImport(service_interface_dll, EntryPoint = "setFloat", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int setFloat(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string key, float value);
 
-        // 获取指定名称Float向量型变量值（带默认值）函数封装
+        // Get Float vector variable value by specified name (with default value) function wrapper
         [DllImport(service_interface_dll, EntryPoint = "getVecFloat", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int getVecFloat(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string key, [MarshalAs(UnmanagedType.LPArray)] float[] default_value, [MarshalAs(UnmanagedType.LPArray)] float[] result);
 
-        // 设置指定名称Float向量型变量值函数封装
+        // Set Float vector variable value by specified name function wrapper
         [DllImport(service_interface_dll, EntryPoint = "setVecFloat", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int setVecFloat(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string key, [MarshalAs(UnmanagedType.LPArray)] float[] value);
 
-        // 获取指定名称Double型变量值（带默认值）函数封装
+        // Get Double variable value by specified name (with default value) function wrapper
         [DllImport(service_interface_dll, EntryPoint = "getDouble", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern double getDouble(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string key, double default_value);
 
-        // 设置指定名称Double型变量值函数封装
+        // Set Double variable value by specified name function wrapper
         [DllImport(service_interface_dll, EntryPoint = "setDouble", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int setDouble(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string key, double value);
 
-        // 获取指定名称Double向量型变量值（带默认值）函数封装
+        // Get Double vector variable value by specified name (with default value) function wrapper
         [DllImport(service_interface_dll, EntryPoint = "getVecDouble", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int getVecDouble(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string key, [MarshalAs(UnmanagedType.LPArray)] double[] default_value, [MarshalAs(UnmanagedType.LPArray)] double[] result);
 
-        // 设置指定名称Double向量型变量值函数封装
+        // Set Double vector variable value by specified name function wrapper
         [DllImport(service_interface_dll, EntryPoint = "setVecDouble", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int setVecDouble(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string key, [MarshalAs(UnmanagedType.LPArray)] double[] value);
 
-        // 获取指定名称字符串变量值（带默认值）函数封装
+        // Get string variable value by specified name (with default value) function wrapper
         [DllImport(service_interface_dll, EntryPoint = "getString", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int getString(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string key, [MarshalAs(UnmanagedType.LPStr)] string default_value, [MarshalAs(UnmanagedType.LPStr)] string result);
 
-        // 设置指定名称字符串变量值函数封装
+        // Set string variable value by specified name function wrapper
         [DllImport(service_interface_dll, EntryPoint = "setString", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int setString(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string key, [MarshalAs(UnmanagedType.LPStr)] string value);
 
-        // 清除指定名称变量函数封装
+        // Clear variable by specified name function wrapper
         [DllImport(service_interface_dll, EntryPoint = "clearNamedVariable", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int clearNamedVariable(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string key);
 
-        // 设置看门狗相关参数函数封装
+        // Set watchdog related parameters function wrapper
         [DllImport(service_interface_dll, EntryPoint = "setWatchDog", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int setWatchDog(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string key, double timeout, int action);
 
-        // 获取看门狗动作函数封装
+        // Get watchdog action function wrapper
         [DllImport(service_interface_dll, EntryPoint = "getWatchDogAction", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int getWatchDogAction(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string key);
 
-        // 获取看门狗超时时间函数封装
+        // Get watchdog timeout function wrapper
         [DllImport(service_interface_dll, EntryPoint = "getWatchDogTimeout", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int getWatchDogTimeout(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string key);
 
-        // 添加Modbus信号函数封装
+        // Add Modbus signal function wrapper
         [DllImport(service_interface_dll, EntryPoint = "modbusAddSignal", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int modbusAddSignal(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string device_info, int slave_number, int signal_address, int signal_type, [MarshalAs(UnmanagedType.LPStr)] string signal_name, bool sequential_mode);
 
-        // 删除Modbus信号函数封装
+        // Delete Modbus signal function wrapper
         [DllImport(service_interface_dll, EntryPoint = "modbusDeleteSignal", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int modbusDeleteSignal(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string signal_name);
 
-        // 删除所有Modbus信号函数封装
+        // Delete all Modbus signals function wrapper
         [DllImport(service_interface_dll, EntryPoint = "modbusDeleteAllSignals", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int modbusDeleteAllSignals(IntPtr h);
 
-        // 获取Modbus信号状态函数封装
+        // Get Modbus signal status function wrapper
         [DllImport(service_interface_dll, EntryPoint = "modbusGetSignalStatus", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int modbusGetSignalStatus(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string signal_name);
 
-        // 获取Modbus信号名称函数封装
+        // Get Modbus signal names function wrapper
         [DllImport(service_interface_dll, EntryPoint = "modbusGetSignalNames", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int modbusGetSignalNames(IntPtr h, [MarshalAs(UnmanagedType.LPArray)] string[] result);
 
-        // 获取Modbus信号类型函数封装
+        // Get Modbus signal types function wrapper
         [DllImport(service_interface_dll, EntryPoint = "modbusGetSignalTypes", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int modbusGetSignalTypes(IntPtr h, [MarshalAs(UnmanagedType.LPArray)] int[] result);
 
-        // 获取Modbus信号值函数封装
+        // Get Modbus signal values function wrapper
         [DllImport(service_interface_dll, EntryPoint = "modbusGetSignalValues", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int modbusGetSignalValues(IntPtr h, [MarshalAs(UnmanagedType.LPArray)] int[] result);
 
-        // 获取Modbus信号错误信息函数封装
+        // Get Modbus signal error information function wrapper
         [DllImport(service_interface_dll, EntryPoint = "modbusGetSignalErrors", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int modbusGetSignalErrors(IntPtr h, [MarshalAs(UnmanagedType.LPArray)] int[] result);
 
-        // 发送Modbus自定义命令函数封装
+        // Send Modbus custom command function wrapper
         [DllImport(service_interface_dll, EntryPoint = "modbusSendCustomCommand", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         public static extern int modbusSendCustomCommand(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string IP, int slave_number, int function_code, [MarshalAs(UnmanagedType.LPArray)] byte[] data);
 
-        // 设置Modbus数字输入动作函数封装
+        // Set Modbus digital input action function wrapper
         //  [DllImport(service_interface_dll, EntryPoint = "modbusSetDigitalInputAction", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         //  public static extern int modbusSetDigitalInputAction(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string robot_name, [MarshalAs(UnmanagedType.LPStr)] string signal_name, StandardInputAction_C action);
 
-        // 设置Modbus输出运行状态函数封装
+        // Set Modbus output run state function wrapper
         //  [DllImport(service_interface_dll, EntryPoint = "modbusSetOutputRunstate", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         // public static extern int modbusSetOutputRunstate(IntPtr h, [MarshalAs(UnmanagedType.LPStr)] string robot_name, [MarshalAs(UnmanagedType.LPStr)] string signal_name, StandardOutputRunState_C runstate);
 

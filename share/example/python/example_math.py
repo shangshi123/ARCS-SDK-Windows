@@ -2,87 +2,88 @@
 # coding=utf-8
 
 """
-机械臂欧拉角与四元数转换
+Conversion between robot arm Euler angles and quaternions
 
-步骤:
-第一步: 连接到 RPC 服务
-第二步: 机械臂登录
-第三步: 欧拉角转四元数
-第四步: 四元数转欧拉角
+Steps:
+Step 1: Connect to RPC service
+Step 2: Robot login
+Step 3: Euler angles to quaternion
+Step 4: Quaternion to Euler angles
 """
 import time
 
 import pyaubo_sdk
 
-robot_ip = "127.0.0.1"  # 服务器 IP 地址
-robot_port = 30004  # 端口号
+robot_ip = "127.0.0.1"  # Server IP address
+robot_port = 30004  # Port number
 M_PI = 3.14159265358979323846
 robot_rpc_client = pyaubo_sdk.RpcClient()
 
 
-# 欧拉角转四元数
+# Euler angles to quaternion
 def exampleRpyToQuat():
-    print("欧拉角转四元数")
-    # 欧拉角
+    print("Euler angles to quaternion")
+    # Euler angles
     rpy = [0.611, 0.785, 0.960]
-    # 接口调用: 欧拉角转四元数
+    # API call: Euler angles to quaternion
     quat = robot_rpc_client.getMath().rpyToQuaternion(rpy)
-    print("四元数:", quat)
+    print("Quaternion:", quat)
 
 
-# 四元数转欧拉角
+# Quaternion to Euler angles
 def exampleQuatToRpy():
-    print("四元数转欧拉角")
-    # 四元数
+    print("Quaternion to Euler angles")
+    # Quaternion
     quat = [0.834721517970497, 0.07804256900772265, 0.4518931575790371, 0.3048637712043723]
-    # 接口调用: 四元数转欧拉角
+    # API call: Quaternion to Euler angles
     rpy = robot_rpc_client.getMath().quaternionToRpy(quat)
-    print("欧拉角:", rpy)
+    print("Euler angles:", rpy)
     pass
 
 
-# 已知法兰中心在Base下的位姿，求得TCP在Base下的位姿
+# Given the pose of the flange center under Base, calculate the pose of TCP under Base
 def example_flange_to_tcp():
-    # 接口调用: 获取机器人的名字
+    # API call: Get the robot's name
     robot_name = robot_rpc_client.getRobotNames()[0]
     robot_interface = robot_rpc_client.getRobotInterface(robot_name)
-    # 接口调用: 设置TCP偏移
+    # API call: Set TCP offset
     tcp_offset = [0.01, 0.02, 0.03, 0.1, 0.2, 0.0]
     robot_interface.getRobotConfig().setTcpOffset(tcp_offset)
     time.sleep(0.1)
-    # 接口调用: 获取法兰中心在Base下的当前位置姿态
+    # API call: Get the current pose of the flange center under Base
     actual_flange_pose_on_base = robot_interface.getRobotState().getToolPose()
-    print(f"法兰中心在Base下的当前位置姿态:{actual_flange_pose_on_base}")
-    # 接口调用: 根据法兰中心在Base下的位置姿态，计算获得TCP在Base下的位置姿态
+    print(f"Current pose of flange center under Base: {actual_flange_pose_on_base}")
+    # API call: Calculate the pose of TCP under Base based on the pose of the flange center under Base
     actual_tcp_pose_on_base = robot_rpc_client.getMath().poseTrans(actual_flange_pose_on_base, tcp_offset)
-    print(f"TCP在Base下的位置姿态:{actual_tcp_pose_on_base}")
+    print(f"Pose of TCP under Base: {actual_tcp_pose_on_base}")
 
 
-# 已知TCP在Base下的位姿，求得法兰中心在Base下的位姿
+# Given the pose of TCP under Base, calculate the pose of the flange center under Base
 def example_tcp_to_flange():
-    # 接口调用: 获取机器人的名字
+    # API call: Get the robot's name
     robot_name = robot_rpc_client.getRobotNames()[0]
     robot_interface = robot_rpc_client.getRobotInterface(robot_name)
-    # 接口调用: 设置TCP偏移
+    # API call: Set TCP offset
     tcp_offset = [0.01, 0.02, 0.03, 0.1, 0.2, 0.0]
     robot_interface.getRobotConfig().setTcpOffset(tcp_offset)
     time.sleep(0.1)
-    # 接口调用: 获取TCP在Base下的当前位置姿态
+    # API call: Get the current pose of TCP under Base
     actual_tcp_pose_on_base = robot_interface.getRobotState().getTcpPose()
-    print(f"TCP在Base下的当前位置姿态:{actual_tcp_pose_on_base}")
-    # 接口调用: 根据TCP在Base下的位置姿态，计算获得法兰中心在Base下的位置姿态
+    print(f"Current pose of TCP under Base: {actual_tcp_pose_on_base}")
+    # API call: Calculate the pose of the flange center under Base based on the pose of TCP under Base
     actual_flange_pose_on_base = robot_rpc_client.getMath().poseTrans(actual_tcp_pose_on_base, robot_rpc_client.getMath().poseInverse(tcp_offset))
-    print(f"法兰中心在Base下的位置姿态:{actual_flange_pose_on_base}")
+    print(f"Pose of flange center under Base: {actual_flange_pose_on_base}")
 
 
 if __name__ == '__main__':
-    robot_rpc_client.connect(robot_ip, robot_port)  # 接口调用: 连接 RPC 服务
+    robot_rpc_client.connect(robot_ip, robot_port)  # API call: Connect to RPC service
     if robot_rpc_client.hasConnected():
         print("Robot rcp_client connected successfully!")
-        robot_rpc_client.login("aubo", "123456")  # 接口调用: 机械臂登录
+        robot_rpc_client.login("aubo", "123456")  # API call: Robot login
         if robot_rpc_client.hasLogined():
             print("Robot rcp_client logined successfully!")
-            exampleRpyToQuat()  # 欧拉角转四元数
-            exampleQuatToRpy()  # 四元数转欧拉角
-            example_flange_to_tcp()  # 已知法兰中心在Base下的位姿，求得TCP在Base下的位姿
-            example_tcp_to_flange()  # 已知TCP在Base下的位姿，求得法兰中心在Base下的位姿
+            exampleRpyToQuat()  # Euler angles to quaternion
+            exampleQuatToRpy()  # Quaternion to Euler angles
+            example_flange_to_tcp()  # Given the pose of the flange center under Base, calculate the pose of TCP under Base
+            example_tcp_to_flange()  # Given the pose of TCP under Base, calculate the pose of the flange center under Base
+

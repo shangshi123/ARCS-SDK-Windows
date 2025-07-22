@@ -8,66 +8,66 @@ using namespace arcs::aubo_sdk;
 #define LOCAL_IP "127.0.0.1"
 
 void example1(RpcClientPtr rpc_cli) {
-  // 接口调用: 计时器 timer1 开始计时
+  // API call: Timer timer1 starts timing
   rpc_cli->getRuntimeMachine()->timerStart("timer1");
   std::this_thread::sleep_for(std::chrono::milliseconds(7500));
-  // 接口调用: 计时器 timer1 结束计时
+  // API call: Timer timer1 stops timing
   rpc_cli->getRuntimeMachine()->timerStop("timer1");
-  // 接口调用: 获取计时器 timer1 计时的时长
+  // API call: Get the duration timed by timer timer1
   std::cout << rpc_cli->getRuntimeMachine()->getTimer("timer1") << std::endl;
 
-  // 接口调用: 计时器 timer1 开始计时
+  // API call: Timer timer1 starts timing
   rpc_cli->getRuntimeMachine()->timerStart("timer1");
   std::this_thread::sleep_for(std::chrono::milliseconds(7500));
-  // 接口调用: 计时器 timer1 结束计时
+  // API call: Timer timer1 stops timing
   rpc_cli->getRuntimeMachine()->timerStop("timer1");
-  // 接口调用: 获取计时器 timer1 计时的时长
+  // API call: Get the duration timed by timer timer1
   std::cout << rpc_cli->getRuntimeMachine()->getTimer("timer1") << std::endl;
 
-  // 接口调用: 重置计时器 timer1
+  // API call: Reset timer timer1
   rpc_cli->getRuntimeMachine()->timerReset("timer1");
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
-  // 接口调用: 获取计时器 timer1 计时的时长
+  // API call: Get the duration timed by timer timer1
   std::cout << rpc_cli->getRuntimeMachine()->getTimer("timer1") << std::endl;
-  // 接口调用: 删除计时器 timer1
+  // API call: Delete timer timer1
   rpc_cli->getRuntimeMachine()->timerDelete("timer1");
 }
 
 void example2(RpcClientPtr rpc_cli) {
-  // 接口调用: 计时器 timer1 开始计时
+  // API call: Timer timer1 starts timing
   rpc_cli->getRuntimeMachine()->timerStart("timer1");
   std::this_thread::sleep_for(std::chrono::milliseconds(7500));
-  // 接口调用: 获取计时器 timer1 计时的时长
+  // API call: Get the duration timed by timer timer1
   std::cout << rpc_cli->getRuntimeMachine()->getTimer("timer1") << std::endl;
-  // 接口调用: 重置计时器 timer1
+  // API call: Reset timer timer1
   rpc_cli->getRuntimeMachine()->timerReset("timer1");
 
-  // 接口调用: 计时器 timer1 开始计时
+  // API call: Timer timer1 starts timing
   rpc_cli->getRuntimeMachine()->timerStart("timer1");
   std::this_thread::sleep_for(std::chrono::milliseconds(7500));
-  // 接口调用: 获取计时器 timer1 计时的时长
+  // API call: Get the duration timed by timer timer1
   std::cout << rpc_cli->getRuntimeMachine()->getTimer("timer1") << std::endl;
-  // 接口调用: 重置计时器 timer1
+  // API call: Reset timer timer1
   rpc_cli->getRuntimeMachine()->timerReset("timer1");
-  // 接口调用: 删除计时器 timer1
+  // API call: Delete timer timer1
   rpc_cli->getRuntimeMachine()->timerDelete("timer1");
 }
 
 int main(int argc, char **argv) {
   auto rpc_cli = std::make_shared<RpcClient>();
-  // 接口调用: 设置 RPC 超时
+  // API call: Set RPC timeout
   rpc_cli->setRequestTimeout(1000);
-  // 接口调用: 连接到 RPC 服务
+  // API call: Connect to RPC service
   rpc_cli->connect(LOCAL_IP, 30004);
-  // 接口调用: 登录
+  // API call: Login
   rpc_cli->login("aubo", "123456");
 
   example1(rpc_cli);
   example2(rpc_cli);
 
-  // 接口调用: 退出登录
+  // API call: Logout
   rpc_cli->logout();
-  // 接口调用: 断开连接
+  // API call: Disconnect
   rpc_cli->disconnect();
 
   return 0;

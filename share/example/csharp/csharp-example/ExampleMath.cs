@@ -10,12 +10,12 @@ namespace csharp_example
         const int RSERR_SUCC = 0;
 
         static UInt16 rshd = 0xffff;
-        //机械臂IP地址
+        // Robot IP address
         const string robot_ip = "127.0.0.1";
-        //机械臂端口号
+        // Robot port number
         const int server_port = 30004;
 
-        // 展平二维数组为一维数组（行优先）
+        // Flatten a 2D array to a 1D array (row-major)
         public static double[] flattenArray(double[][] nestedArray)
         {
             int totalSize = nestedArray.Sum(subArray => subArray.Length);
@@ -36,11 +36,11 @@ namespace csharp_example
             const int max_retry_count = 5;
             int cnt = 0;
 
-            // 接口调用: 获取当前的运动指令 ID
+            // API call: Get current motion command ID
             IntPtr motion_control = cSharpBinging_RobotInterface.robot_getMotionControl(robot_interface);
             int exec_id = cSharpBinging_MotionControl.getExecId(motion_control);
 
-            // 等待机械臂开始运动
+            // Wait for the robot to start moving
             while (exec_id == -1)
             {
                 if (cnt++ > max_retry_count)
@@ -51,7 +51,7 @@ namespace csharp_example
                 exec_id = cSharpBinging_MotionControl.getExecId(motion_control);
             }
 
-            // 等待机械臂动作完成
+            // Wait for the robot action to complete
             while (cSharpBinging_MotionControl.getExecId(motion_control) != -1)
             {
                 Thread.Sleep(50);
@@ -61,12 +61,12 @@ namespace csharp_example
         }
 
 
-        // 打印单个变量的值和名称
+        // Print the value and name of a single variable
         public static void printSingle<T>(T param, string name)
         {
             Console.WriteLine($"{name}: {param}");
         }
-        // 打印 double[] 类型的数组
+        // Print an array of type double[]
         public static void printArray(double[] param, string name)
         {
             Console.Write($"{name}: ");
@@ -80,13 +80,13 @@ namespace csharp_example
             }
             Console.WriteLine();
         }
-        // 打印 double[][] 类型的二维数组
+        // Print a 2D array of type double[][]
         public static void print2DArray(double[][] param, string name)
         {
             Console.WriteLine($"{name}: ");
             for (int i = 0; i < param.Length; i++)
             {
-                Console.Write($"  第{i + 1}组: ");
+                Console.Write($"  Group {i + 1}: ");
                 for (int j = 0; j < param[i].Length; j++)
                 {
                     Console.Write(param[i][j]);
@@ -111,7 +111,7 @@ namespace csharp_example
             IntPtr[] robot_names = new IntPtr[10];
             for (int i = 0; i < 10; i++)
             {
-                robot_names[i] = Marshal.AllocHGlobal(100); // 分配100字节内存用于存放字符串（考虑 '\0' 结尾）
+                robot_names[i] = Marshal.AllocHGlobal(100); // Allocate 100 bytes of memory for storing strings (consider '\0' ending)
             }
 
             int num = cSharpBinding_RPC.rpc_getRobotNames(cli, robot_names);
@@ -119,14 +119,14 @@ namespace csharp_example
             {
                 for (int i = 0; i < 10; i++)
                 {
-                    Marshal.FreeHGlobal(robot_names[i]); // 释放分配的内存
+                    Marshal.FreeHGlobal(robot_names[i]); // Release allocated memory
                 }
                 return -1;
             }
             string robot_name = Marshal.PtrToStringAnsi(robot_names[0]);
             for (int i = 0; i < 10; i++)
             {
-                Marshal.FreeHGlobal(robot_names[i]); // 释放分配的内存
+                Marshal.FreeHGlobal(robot_names[i]); // Release allocated memory
             }
             if (robot_name == "")
             {
@@ -136,7 +136,7 @@ namespace csharp_example
             IntPtr robot_interface = cSharpBinding_RPC.rpc_getRobotInterface(cli, robot_name);
 
 
-            // 调用函数
+            // Call function
             double[][] nestedPoses = new double[][]
             {
                 new double[] { 1.0, 2.0, 3.0, 4, 5, 6 },
@@ -163,7 +163,7 @@ namespace csharp_example
             double[] p1 = { 0.2, 0.5, 0.1, 1.57, 0, 0 };
             double[] p2 = { 0.2, 0.5, 0.6, 1.57, 0, 0 };
 
-            // 接口调用: 位姿加法
+            // API call: Pose addition
             double[] result = new double[6];
             cSharpBinding_Math.poseAdd(mathPtr, p1, p2, result);
 
@@ -177,14 +177,14 @@ namespace csharp_example
             double[] p1 = { 0.2, 0.5, 0.1, 1.57, 0, 0 };
             double[] p2 = { 0.2, 0.5, 0.6, 1.57, 0, 0 };
 
-            // 接口调用: 位姿减法
+            // API call: Pose subtraction
             double[] result = new double[6];
             cSharpBinding_Math.poseSub(mathPtr, p1, p2, result);
 
             printArray(result, "poseSub");
         }
 
-        // 线性插值
+        // Linear interpolation
         public static void exampleInterpolatePose(IntPtr cli)
         {
             IntPtr mathPtr = cSharpBinding_RPC.rpc_getMath(cli);
@@ -193,62 +193,62 @@ namespace csharp_example
             double[] p2 = { 0.2, 0.2, 0.6, 0, 0, 0 };
             double alpha = 0.5;
 
-            // 接口调用: 计算线性插值
+            // API call: Calculate linear interpolation
             double[] result = new double[6];
             cSharpBinding_Math.interpolatePose(mathPtr, p1, p2, alpha, result);
 
             printArray(result, "interpolatePose");
         }
 
-        // 位姿变换
+        // Pose transformation
         public static void examplePoseTrans(IntPtr cli)
         {
             IntPtr mathPtr = cSharpBinding_RPC.rpc_getMath(cli);
 
-            // B相对于A的位姿
+            // Pose of B relative to A
             double[] F_B_A = { 0.2, 0.5, 0.1, 1.57, 0, 0 };
-            // C相对于B的位姿
+            // Pose of C relative to B
             double[] F_C_B = { 0.2, 0.5, 0.6, 1.57, 0, 0 };
 
-            // 接口调用: 位姿变换获得C相对于A的位姿
+            // API call: Pose transformation to get pose of C relative to A
             double[] F_C_A = new double[6];
             cSharpBinding_Math.poseTrans(mathPtr, F_B_A, F_C_B, F_C_A);
 
             printArray(F_C_A, "poseTrans");
         }
 
-        // 位姿逆变换
+        // Pose inverse transformation
         public static void examplePoseTransInv(IntPtr cli)
         {
             IntPtr mathPtr = cSharpBinding_RPC.rpc_getMath(cli);
 
-            // C相对于A的位姿
+            // Pose of C relative to A
             double[] F_C_A = { 0.4, -0.0996016, 0.600478, 3.14, 0, 0 };
-            // C相对于B的位姿
+            // Pose of C relative to B
             double[] F_C_B = { 0.2, 0.5, 0.6, 1.57, 0, 0 };
 
-            // 接口调用: 位姿逆变换获得B相对于A的位姿
+            // API call: Pose inverse transformation to get pose of B relative to A
             double[] F_B_A = new double[6];
             cSharpBinding_Math.poseTransInv(mathPtr, F_C_A, F_C_B, F_B_A);
 
             printArray(F_B_A, "poseTransInv");
         }
 
-        // 位姿逆
+        // Pose inverse
         public static void examplePoseInverse(IntPtr cli)
         {
             IntPtr mathPtr = cSharpBinding_RPC.rpc_getMath(cli);
 
             double[] p = { 0.2, 0.5, 0.1, 1.57, 0, 3.14 };
 
-            // 接口调用: 获取位姿的逆
+            // API call: Get the inverse of a pose
             double[] result = new double[6];
             cSharpBinding_Math.poseInverse(mathPtr, p, result);
 
             printArray(result, "poseInverse");
         }
 
-        // 位姿距离
+        // Pose distance
         public static void examplePoseDistance(IntPtr cli)
         {
             IntPtr mathPtr = cSharpBinding_RPC.rpc_getMath(cli);
@@ -256,13 +256,13 @@ namespace csharp_example
             double[] p1 = { 0.1, 0.3, 0.1, 0.3142, 0.0, 1.571 };
             double[] p2 = { 0.2, 0.5, 0.6, 0, -0.172, 0.0 };
 
-            // 接口调用: 获得两个位姿的位置距离
+            // API call: Get the positional distance between two poses
             double result = cSharpBinding_Math.poseDistance(mathPtr, p1, p2);
 
             printSingle(result, "poseDistance");
         }
 
-        // 位姿相等判断
+        // Pose equality check
         public static void examplePoseEqual(IntPtr cli)
         {
             IntPtr mathPtr = cSharpBinding_RPC.rpc_getMath(cli);
@@ -270,74 +270,74 @@ namespace csharp_example
             double[] p1 = { 0.1, 0.3, 0.1, 0.3142, 0.0, 1.571 };
             double[] p2 = { 0.1, 0.3, 0.1, 0.3142, 0.0, 1.5711 };
 
-            // 接口调用: 判断两个位姿是否相等
+            // API call: Check if two poses are equal
             double eps = 0.00005;
             bool result = cSharpBinding_Math.poseEqual(mathPtr, p1, p2, eps);
 
             printSingle(result, "poseEqual");
         }
 
-        // 欧拉角转四元数
+        // Euler angles to quaternion
         public static void exampleRpyToQuat(IntPtr cli)
         {
             IntPtr mathPtr = cSharpBinding_RPC.rpc_getMath(cli);
 
             double[] rpy = { 0.611, 0.785, 0.960 };
 
-            // 接口调用: 欧拉角转四元数
+            // API call: Euler angles to quaternion
             double[] quat = new double[4];
             cSharpBinding_Math.rpyToQuaternion(mathPtr, rpy, quat);
 
-            printArray(quat, "欧拉角 -> 四元数");
+            printArray(quat, "Euler angles -> Quaternion");
         }
 
-        // 四元数转欧拉角
+        // Quaternion to Euler angles
         public static void exampleQuatToRpy(IntPtr cli)
         {
             IntPtr mathPtr = cSharpBinding_RPC.rpc_getMath(cli);
 
             double[] quat = { 0.834722, 0.0780426, 0.451893, 0.304864 };
 
-            // 接口调用: 四元数转欧拉角
+            // API call: Quaternion to Euler angles
             double[] rpy = new double[3];
             cSharpBinding_Math.quaternionToRpy(mathPtr, quat, rpy);
 
-            printArray(rpy, "四元数 -> 欧拉角");
+            printArray(rpy, "Quaternion -> Euler angles");
         }
 
-        // 坐标系标定
+        // Coordinate system calibration
         public static void exampleCalibrateCoordinate(IntPtr cli)
         {
             IntPtr mathPtr = cSharpBinding_RPC.rpc_getMath(cli);
 
-            // 获取机器人的名字
+            // Get the robot's name
             IntPtr[] robot_names = new IntPtr[10];
             for (int i = 0; i < 10; i++)
             {
-                robot_names[i] = Marshal.AllocHGlobal(100); // 分配100字节内存用于存放字符串
+                robot_names[i] = Marshal.AllocHGlobal(100); // Allocate 100 bytes of memory for storing strings
             }
             int num = cSharpBinding_RPC.rpc_getRobotNames(cli, robot_names);
             if (num <= 0)
             {
                 for (int i = 0; i < 10; i++)
                 {
-                    Marshal.FreeHGlobal(robot_names[i]); // 释放分配的内存
+                    Marshal.FreeHGlobal(robot_names[i]); // Release allocated memory
                 }
                 return;
             }
             string robot_name = Marshal.PtrToStringAnsi(robot_names[0]);
             for (int i = 0; i < 10; i++)
             {
-                Marshal.FreeHGlobal(robot_names[i]); // 释放分配的内存
+                Marshal.FreeHGlobal(robot_names[i]); // Release allocated memory
             }
 
-            // 设置 TCP 偏移值
+            // Set TCP offset value
             double[] tcp_offset = { 0.17734, 0.00233, 0.14682, 0.0, 0.0, 0.0 };
             IntPtr robot_interface = cSharpBinding_RPC.rpc_getRobotInterface(cli, robot_name);
             IntPtr robot_config = cSharpBinging_RobotInterface.robot_getRobotConfig(robot_interface);
             cSharpBinging_RobotConfig.setTcpOffset(robot_config, tcp_offset);
 
-            // TCP 在基坐标系下的位姿
+            // TCP pose in base coordinate system
             double[][] nested_coords = new double[][]
            {
                 new double[]{ 0.55462, 0.06219, 0.37175, -3.142, 0.0, 1.580 },
@@ -347,64 +347,64 @@ namespace csharp_example
             int rows = nested_coords.Length;
 
             double[] flat_coords = flattenArray(nested_coords);
-            // 用户坐标系标定
+            // User coordinate system calibration
             double[] user_on_base = new double[6];
             cSharpBinding_Math.calibrateCoordinate(mathPtr, flat_coords, rows, 0, user_on_base);
 
-            // 获取 TCP 在基坐标系下的当前位姿
+            // Get the current pose of TCP in base coordinate system
             double[] tcp_on_base = new double[6];
             IntPtr robot_state = cSharpBinging_RobotInterface.robot_getRobotState(robot_interface);
             cSharpBinging_RobotState.getTcpPose(robot_state, tcp_on_base);
 
-            // 获取用户坐标系相对于基坐标系的位姿的逆
+            // Get the inverse of the pose of user coordinate system relative to base coordinate system
             double[] tcp_on_base_inv = new double[6];
             cSharpBinding_Math.poseInverse(mathPtr, user_on_base, tcp_on_base_inv);
 
-            // 获取 TCP 在用户坐标系下的当前位姿
+            // Get the current pose of TCP in user coordinate system
             double[] tcp_on_user = new double[6];
             cSharpBinding_Math.poseTrans(mathPtr, tcp_on_base_inv, tcp_on_base, tcp_on_user);
 
-            printArray(tcp_on_base, "TCP在基坐标系下的位姿");
-            printArray(tcp_offset, "TCP偏移");
-            printArray(user_on_base, "用户坐标系相对于基坐标系的位姿");
-            printArray(tcp_on_user, "TCP在用户坐标系下的位姿");
+            printArray(tcp_on_base, "TCP pose in base coordinate system");
+            printArray(tcp_offset, "TCP offset");
+            printArray(user_on_base, "User coordinate system pose relative to base coordinate system");
+            printArray(tcp_on_user, "TCP pose in user coordinate system");
         }
 
-        // 计算另一半圆弧的中间点
+        // Calculate the midpoint of the other half of the circle arc
         public static void exampleCalculateCircleFourthPoint(IntPtr cli)
         {
-            // 获取机器人的名字
+            // Get the robot's name
             IntPtr[] robot_names = new IntPtr[10];
             for (int i = 0; i < 10; i++)
             {
-                robot_names[i] = Marshal.AllocHGlobal(100); // 分配100字节内存用于存放字符串
+                robot_names[i] = Marshal.AllocHGlobal(100); // Allocate 100 bytes of memory for storing strings
             }
             int num = cSharpBinding_RPC.rpc_getRobotNames(cli, robot_names);
             if (num <= 0)
             {
                 for (int i = 0; i < 10; i++)
                 {
-                    Marshal.FreeHGlobal(robot_names[i]); // 释放分配的内存
+                    Marshal.FreeHGlobal(robot_names[i]); // Release allocated memory
                 }
                 return;
             }
             string robot_name = Marshal.PtrToStringAnsi(robot_names[0]);
             for (int i = 0; i < 10; i++)
             {
-                Marshal.FreeHGlobal(robot_names[i]); // 释放分配的内存
+                Marshal.FreeHGlobal(robot_names[i]); // Release allocated memory
             }
 
-            // 设置 TCP 偏移值
+            // Set TCP offset value
             double[] tcp_offset = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
             IntPtr robot_interface = cSharpBinding_RPC.rpc_getRobotInterface(cli, robot_name);
             IntPtr robot_config = cSharpBinging_RobotInterface.robot_getRobotConfig(robot_interface);
             cSharpBinging_RobotConfig.setTcpOffset(robot_config, tcp_offset);
 
-            // 设置机械臂运动的速度比率
+            // Set the speed ratio for robot motion
             IntPtr motion_control = cSharpBinging_RobotInterface.robot_getMotionControl(robot_interface);
             cSharpBinging_MotionControl.setSpeedFraction(motion_control, 0.3);
 
-            // 关节运动到起始位置
+            // Joint motion to the starting position
             double[] q = { 0.00,
                           -10.43 / 180 * Math.PI,
                            87.39 / 180 * Math.PI,
@@ -413,72 +413,72 @@ namespace csharp_example
                            0.0 / 180 * Math.PI };
             cSharpBinging_MotionControl.moveJoint(motion_control, q, 1.2, 1.0, 0, 0);
 
-            // 阻塞，等待机械臂运动完成
+            // Block, wait for robot motion to complete
             int ret = waitArrival(robot_interface);
             if (ret == 0)
             {
-                Console.WriteLine("关节运动到初始位置成功");
+                Console.WriteLine("Joint motion to initial position succeeded");
             }
             else
             {
-                Console.WriteLine("关节运动到初始位置失败");
+                Console.WriteLine("Joint motion to initial position failed");
             }
 
-            // 定义三个点的位姿
+            // Define the poses of three points
             double[] p1 = { 0.5488696249770836, -0.1214996547187204, 0.2631931199112321, -3.14159198038469, -3.673205103150083e-06, 1.570796326792424 };
             double[] p2 = { 0.5488696249770835, -0.1214996547187207, 0.3599720701808493, -3.14159198038469, -3.6732051029273e-06, 1.570796326792423 };
             double[] p3 = { 0.5488696249770836, -0.0389996547187214, 0.3599720701808496, -3.141591980384691, -3.673205102557476e-06, 1.570796326792422 };
 
-            // 直线运动到圆的第一个点
+            // Linear motion to the first point of the circle
             cSharpBinging_MotionControl.moveLine(motion_control, p1, 1.2, 0.25, 0, 0);
 
-            // 阻塞，等待机械臂运动完成
+            // Block, wait for robot motion to complete
             ret = waitArrival(robot_interface);
             if (ret == 0)
             {
-                Console.WriteLine("直线运动到圆的起始点成功");
+                Console.WriteLine("Linear motion to the starting point of the circle succeeded");
             }
             else
             {
-                Console.WriteLine("直线运动到圆的起始点失败");
+                Console.WriteLine("Linear motion to the starting point of the circle failed");
             }
 
-            // 计算另一半圆弧的中间点位置
+            // Calculate the position of the midpoint of the other half of the circle arc
             IntPtr mathPtr = cSharpBinding_RPC.rpc_getMath(cli);
             double[] p4 = new double[6];
             int retval = cSharpBinding_Math.calculateCircleFourthPoint(mathPtr, p1, p2, p3, 1, p4);
 
             if (retval == 0)
             {
-                Console.Error.WriteLine("计算另一半圆弧的中间点失败，无法完成圆运动");
+                Console.Error.WriteLine("Failed to calculate the midpoint of the other half of the circle arc, unable to complete circular motion");
             }
             else
             {
-                // 设置为固定模式
+                // Set to fixed mode
                 cSharpBinging_MotionControl.setCirclePathMode(motion_control, 0);
 
-                // 做圆弧运动
+                // Perform circular arc motion
                 cSharpBinging_MotionControl.moveCircle(motion_control, p2, p3, 1.2, 0.25, 0, 0);
 
-                // 阻塞，等待机械臂运动完成
+                // Block, wait for robot motion to complete
                 ret = waitArrival(robot_interface);
                 if (ret == -1)
                 {
-                    Console.WriteLine("圆运动失败");
+                    Console.WriteLine("Circular motion failed");
                 }
 
-                // 做组成圆运动的另一半圆弧运动
+                // Perform the other half of the circular arc motion that makes up the circular motion
                 cSharpBinging_MotionControl.moveCircle(motion_control, p4, p1, 1.2, 0.25, 0, 0);
 
-                // 阻塞，等待机械臂运动完成
+                // Block, wait for robot motion to complete
                 ret = waitArrival(robot_interface);
                 if (ret == 0)
                 {
-                    Console.WriteLine("圆运动成功");
+                    Console.WriteLine("Circular motion succeeded");
                 }
                 else
                 {
-                    Console.WriteLine("圆运动失败");
+                    Console.WriteLine("Circular motion failed");
                 }
             }
         }
@@ -486,7 +486,7 @@ namespace csharp_example
         static void Main(string[] args)
         {
             cSharpBinding_RPC csharpbingding_rpc = new cSharpBinding_RPC();
-            //初始化机械臂控制库
+            // Initialize robot control library
             IntPtr rpc_client = cSharpBinding_RPC.rpc_create_client(0);
             Console.Out.WriteLine("rpc_create_client ret={0}", rpc_client);
             if (rpc_client == IntPtr.Zero)

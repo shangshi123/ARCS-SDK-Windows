@@ -2,17 +2,17 @@
 # coding=utf-8
 
 """
-压力测试
-readTest(): 10线程不断地获取TCP偏移
-connectTest(): 10线程不断地连接和断开
+Stress Test
+readTest(): 10 threads continuously get TCP offset
+connectTest(): 10 threads continuously connect and disconnect
 """
 
 import pyaubo_sdk
 import time
 import threading
 
-robot_ip = "127.0.0.1"  # 服务器 IP 地址
-robot_port = 30004  # 端口号
+robot_ip = "127.0.0.1"  # Server IP address
+robot_port = 30004  # Port number
 M_PI = 3.14159265358979323846
 robot_rpc_client = pyaubo_sdk.RpcClient()
 
@@ -65,8 +65,7 @@ def connectTest():
 
 
 if __name__ == '__main__':
-    # 10线程不断地获取TCP偏移
+    # 10 threads continuously
     readTest()
-    # 10线程不断地连接和断开
+    # 10 threads continuously connect and disconnect
     # connectTest()
-

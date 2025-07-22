@@ -2,171 +2,171 @@
 # coding=utf-8
 
 """
-获取机械臂配置信息
+Get robot arm configuration information
 
-步骤:
-第一步: 连接到 RPC 服务
-第二步: 机械臂登录
-第三步: 标准数字IO:
-    1.获取标准数字输入和输出数量
-    2.设置和获取输入触发动作
-    3.设置和获取输出状态选择
-    4.获取标准数字输入和输出值
-第四步: 标准模拟IO:
-    1.获取标准模拟输入和输出数量
-    2.设置和获取标准模拟输入范围
-    3.获取标准模拟输入
-    4.设置和获取标准模拟输出范围
-    5.设置和获取标准模拟输出状态选择
-    6.设置和获取标准模拟输出
-第五步: 工具端数字IO
-    1.获取工具端数字输入和输出数量
-    2.设置和获取工具端数字输入触发动作
-    3.设置和获取工具端数字输出状态选择
-第六步: 工具端模拟IO
-    1.获取工具端模拟输入和输出数量
-    2.获取工具端模拟输入范围
-    3.获取工具端模拟输入
+Steps:
+Step
+Step 2: Robot arm login
+Step
+    1. Get the number of standard digital inputs and outputs
+    2. Set and get input trigger actions
+    3. Set and get output state selection
+    4. Get standard digital input and output values
+Step 4: Standard analog IO:
+    1. Get the number of standard analog inputs and outputs
+    2. Set and get standard analog input range
+    3. Get standard analog input
+    4. Set and get standard analog output range
+    5. Set and get standard analog output state selection
+    6. Set and get standard analog output
+Step 5: Tool-end digital IO
+    1. Get the number of tool-end digital inputs and outputs
+    2. Set and get tool-end digital input trigger actions
+    3. Set and get tool-end digital output state selection
+Step 6: Tool-end analog IO
+    1. Get the number of tool-end analog inputs and outputs
+    2. Get tool-end analog input range
+    3. Get tool-end analog input
 """
 
 import pyaubo_sdk
 
-robot_ip = "127.0.0.1"  # 服务器 IP 地址
-robot_port = 30004  # 端口号
+robot_ip = "127.0.0.1"  # Server IP address
+robot_port = 30004  # Port number
 M_PI = 3.14159265358979323846
 robot_rpc_client = pyaubo_sdk.RpcClient()
 
 
 def exampleStandardDigitalIO(robot_name):
-    # 接口调用： 获取标准数字输入数量
+    # API call: Get the number of standard digital inputs
     input_num = robot_rpc_client.getRobotInterface(robot_name).getIoControl().getStandardDigitalInputNum()
-    print("标准数字输入数量：", input_num)
-    # 接口调用： 获取标准数字输出数量
+    print("Number of standard digital inputs:", input_num)
+    # API call: Get the number of standard digital outputs
     output_num = robot_rpc_client.getRobotInterface(robot_name).getIoControl().getStandardDigitalOutputNum()
-    print("标准数字输出数量：", output_num)
+    print("Number of standard digital outputs:", output_num)
 
-    # 接口调用： 设置所有的输入触发动作为 Default
+    # API call: Set all input trigger actions to Default
     robot_rpc_client.getRobotInterface(robot_name).getIoControl().setDigitalInputActionDefault()
-    # 接口调用： 获取输入触发动作
+    # API call: Get input trigger action
     input_action = robot_rpc_client.getRobotInterface(robot_name).getIoControl().getStandardDigitalInputAction(0x00000001)
-    print("获取输入触发动作为：", input_action)
-    # 接口调用： 获取输入触发动作
+    print("Get input trigger action as:", input_action)
+    # API call: Get input trigger action
     input_action = robot_rpc_client.getRobotInterface(robot_name).getIoControl().getStandardDigitalInputAction(0x00000001)
-    print("获取输入触发动作为：", input_action)
+    print("Get input trigger action as:", input_action)
 
-    # 接口调用： 设置所有的输出状态选择为 NONE
+    # API call: Set all output state selections to NONE
     robot_rpc_client.getRobotInterface(robot_name).getIoControl().setDigitalOutputRunstateDefault()
-    # 接口调用： 获取输出状态选择
+    # API call: Get output state selection
     output_runstate = robot_rpc_client.getRobotInterface(robot_name).getIoControl().getStandardDigitalOutputRunstate(0x00000001)
-    print("获取输出状态选择为：", output_runstate)
+    print("Get output state selection as:", output_runstate)
 
-    # 接口调用： 获取标准数字输出状态选择
+    # API call: Get standard digital output state selection
     output_runstate = robot_rpc_client.getRobotInterface(robot_name).getIoControl().getStandardDigitalOutputRunstate(0x00000001)
-    print("获取输出状态选择为：", output_runstate)
+    print("Get output state selection as:", output_runstate)
 
-    # 打印所有的标准数字输入值
+    # Print all standard digital input values
     input_value = []
     for i in range(input_num):
         value = robot_rpc_client.getRobotInterface(robot_name).getIoControl().getStandardDigitalInput(i)
         input_value.append(value)
-    print("输入值:", input_value)
+    print("Input values:", input_value)
 
-    # 打印所有的标准数字输出值
+    # Print all standard digital output values
     output_value = []
     for i in range(output_num):
         value = robot_rpc_client.getRobotInterface(robot_name).getIoControl().getStandardDigitalOutput(i)
         output_value.append(value)
-    print("输出值:", output_value)
+    print("Output values:", output_value)
 
 
 def exampleStandardAnalogIO(robot_name):
-    # 接口调用： 获取标准模拟输入数量
+    # API call: Get the number of standard analog inputs
     input_num = robot_rpc_client.getRobotInterface(robot_name).getIoControl().getStandardAnalogInputNum()
-    print("标准模拟输入数量：", input_num)
-    # 接口调用： 获取标准模拟输出数量
+    print("Number of standard analog inputs:", input_num)
+    # API call: Get the number of standard analog outputs
     output_num = robot_rpc_client.getRobotInterface(robot_name).getIoControl().getStandardAnalogOutputNum()
-    print("标准模拟输出数量：", output_num)
+    print("Number of standard analog outputs:", output_num)
 
-    # 接口调用： 设置标准模拟输入范围
+    # API call: Set standard analog input range
     input_domain = 15
     robot_rpc_client.getRobotInterface(robot_name).getIoControl().setStandardAnalogInputDomain(0, input_domain)
-    # 接口调用： 获取标准模拟输入范围
+    # API call: Get standard analog input range
     input_domain = robot_rpc_client.getRobotInterface(robot_name).getIoControl().getStandardAnalogInputDomain(0)
-    print("标准模拟输入范围：", input_domain)
+    print("Standard analog input range:", input_domain)
 
-    # 接口调用： 设置标准模拟输出范围
+    # API call: Set standard analog output range
     output_domain = 15
     robot_rpc_client.getRobotInterface(robot_name).getIoControl().setStandardAnalogOutputDomain(0, output_domain)
-    # 接口调用： 获取标准模拟输出范围
+    # API call: Get standard analog output range
     output_domain = robot_rpc_client.getRobotInterface(robot_name).getIoControl().getStandardAnalogOutputDomain(0)
-    print("标准模拟输出范围：", output_domain)
+    print("Standard analog output range:", output_domain)
 
-    # 接口调用： 获取标准模拟输出状态选择
+    # API call: Get standard analog output state selection
     output_runstate = robot_rpc_client.getRobotInterface(robot_name).getIoControl().getStandardAnalogOutputRunstate(3)
-    print("输出状态选择：", output_runstate)
+    print("Output state selection:", output_runstate)
 
 
 def exampleToolDigitalIO(robot_name):
-    # 接口调用： 获取工具端数字输入数量
+    # API call: Get the number of tool-end digital inputs
     input_num = robot_rpc_client.getRobotInterface(robot_name).getIoControl().getToolDigitalInputNum()
-    print("工具端数字输入数量：", input_num)
-    # 接口调用： 获取工具端数字输出数量
+    print("Number of tool-end digital inputs:", input_num)
+    # API call: Get the number of tool-end digital outputs
     output_num = robot_rpc_client.getRobotInterface(robot_name).getIoControl().getToolDigitalOutputNum()
-    print("工具端数字输出数量：", output_num)
+    print("Number of tool-end digital outputs:", output_num)
 
-    # 接口调用： 设置指定的工具端IO为输入
+    # API call: Set specified tool-end IO as input
     robot_rpc_client.getRobotInterface(robot_name).getIoControl().setToolIoInput(1, True)
-    # 接口调用： 判断指定的工具端IO是否为输入
+    # API call: Check if specified tool-end IO is input
     isInput = robot_rpc_client.getRobotInterface(robot_name).getIoControl().isToolIoInput(1)
-    print("指定的工具端IO是否为输入：", isInput)
-    # 接口调用： 获取工具端数字输入
+    print("Is specified tool-end IO input:", isInput)
+    # API call: Get tool-end digital input
     input = robot_rpc_client.getRobotInterface(robot_name).getIoControl().getToolDigitalInput(1)
-    print("工具端数字输入：", input)
+    print("Tool-end digital input:", input)
 
-    # 接口调用： 设置所有的工具端数字输入触发动作为 Default
+    # API call: Set all tool-end digital input trigger actions to Default
     input_action = pyaubo_sdk.StandardInputAction.Default
     robot_rpc_client.getRobotInterface(robot_name).getIoControl().setToolDigitalInputAction(0, input_action)
-    # 接口调用： 获取工具端数字输入触发动作
+    # API call: Get tool-end digital input trigger action
     input_action = robot_rpc_client.getRobotInterface(robot_name).getIoControl().getToolDigitalInputAction(0)
-    print("输入触发动作：", input_action)
+    print("Input trigger action:", input_action)
 
-    # 接口调用： 获取工具端数字输出状态选择
+    # API call: Get tool-end digital output state selection
     output_runstate = robot_rpc_client.getRobotInterface(robot_name).getIoControl().getToolDigitalOutputRunstate(3)
-    print("输出状态选择：", output_runstate)
+    print("Output state selection:", output_runstate)
 
-    # 接口调用： 设置工具端数字输出
+    # API call: Set tool-end digital output
     output = True
     robot_rpc_client.getRobotInterface(robot_name).getIoControl().setToolDigitalOutput(3, output)
-    # 接口调用： 获取工具端数字输出
+    # API call: Get tool-end digital output
     output = robot_rpc_client.getRobotInterface(robot_name).getIoControl().getToolDigitalOutput(3)
-    print("工具端数字输出：", output)
+    print("Tool-end digital output:", output)
 
 
 def exampleToolAnalogIO(robot_name):
-    # 接口调用： 获取标准模拟输入数量
+    # API call: Get the number of standard analog inputs
     input_num = robot_rpc_client.getRobotInterface(robot_name).getIoControl().getToolAnalogInputNum()
-    print("标准模拟输入数量：", input_num)
-    # 接口调用： 获取标准模拟输出数量
+    print("Number of standard analog inputs:", input_num)
+    # API call: Get the number of standard analog outputs
     output_num = robot_rpc_client.getRobotInterface(robot_name).getIoControl().getToolAnalogOutputNum()
-    print("标准模拟输出数量：", output_num)
+    print("Number of standard analog outputs:", output_num)
 
-    # 接口调用： 获取工具端模拟输入范围
+    # API call: Get tool-end analog input range
     input_domain = robot_rpc_client.getRobotInterface(robot_name).getIoControl().getToolAnalogInputDomain(1)
-    print("工具端模拟输入范围：", input_domain)
-    # 接口调用： 获取工具端模拟输入
+    print("Tool-end analog input range:", input_domain)
+    # API call: Get tool-end analog input
     input_value = robot_rpc_client.getRobotInterface(robot_name).getIoControl().getToolAnalogInput(1)
-    print("工具端模拟输入：", input_value)
+    print("Tool-end analog input:", input_value)
 
 
 if __name__ == '__main__':
-    robot_rpc_client.connect(robot_ip, robot_port)  # 接口调用: 连接 RPC 服务
+    robot_rpc_client.connect(robot_ip, robot_port)  # API call: Connect to RPC service
     if robot_rpc_client.hasConnected():
         print("Robot rcp_client connected successfully!")
-        robot_rpc_client.login("aubo", "123456")  # 接口调用: 机械臂登录
+        robot_rpc_client.login("aubo", "123456")  # API call: Robot arm login
         if robot_rpc_client.hasLogined():
             print("Robot rcp_client logined successfully!")
-            robot_name = robot_rpc_client.getRobotNames()[0]  # 接口调用: 获取机器人的名字
-            exampleStandardDigitalIO(robot_name)  # 获取标准数字IO
-            exampleStandardAnalogIO(robot_name)  # 获取标准模拟IO
-            exampleToolDigitalIO(robot_name)  # 获取工具端数字IO
-            exampleToolAnalogIO(robot_name)  # 获取工具端模拟IO
+            robot_name = robot_rpc_client.getRobotNames()[0]  # API call: Get robot name
+            exampleStandardDigitalIO(robot_name)  # Get standard digital IO
+            exampleStandardAnalogIO(robot_name)  # Get standard analog IO
+            exampleToolDigitalIO(robot_name)  # Get tool-end digital IO
+            exampleToolAnalogIO(robot_name)  # Get tool-end analog IO

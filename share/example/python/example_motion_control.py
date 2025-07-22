@@ -3,38 +3,38 @@ import time
 import math
 from pyaubo_sdk import RpcClient, RuntimeState
 
-# 机器人IP 地址
+# Robot IP address
 LOCAL_IP = "127.0.0.1"
 
 
 def wait_for_queue_space(motion_function):
     """
-    等待运动队列有空位。调用指定的运动函数，直到返回值不为2（返回值为2表示队列已满）。
-    :param motion_function: 要执行的运动函数
+    Wait for motion queue to have space. Calls the specified motion function until the return value is not 2 (2 means queue is full).
+    :param motion_function: The motion function to execute
     """
-    while motion_function() == 2:  # 如果返回值为2，表示队列已满
+    while motion_function() == 2:  # If return value is 2, queue is full
         time.sleep(0.05)
     motion_function()
 
 
 def execute_motion_sequence(motions):
     """
-    下发运动指令，直到设置终止标志事件。
-    :param motions: 运动指令的列表，每个指令是一个函数
+    Send motion commands until the stop event is set.
+    :param motions: List of motion commands, each command is a function
     """
     for motion in motions:
         if stop_event.is_set():
             # print("stop")
-            return  # 如果设置终止标志事件，停止下发运动指令
+            return  # If stop event is set, stop sending motion commands
         wait_for_queue_space(motion)
 
 
 def robot_motion_control(cli):
     """
-    控制机器人执行运动
-    :param cli: RpcClient 实例，用于与机器人通信
+    Control robot to execute motions
+    :param cli: RpcClient instance, used to communicate with the robot
     """
-    # 路点，用关节角表示，单位: 弧度
+    # Waypoints, represented by joint angles, unit: radians
     joint_angle1 = [
         0.0 * (math.pi / 180), -15.0 * (math.pi / 180), 100.0 * (math.pi / 180),
         25.0 * (math.pi / 180), 90.0 * (math.pi / 180), 0.0 * (math.pi / 180)
@@ -55,19 +55,19 @@ def robot_motion_control(cli):
         52.37 * (math.pi / 180), 90.0 * (math.pi / 180), 11.64 * (math.pi / 180)
     ]
 
-    # 接口调用: 获取机器人的名字
+    # API call: Get robot name
     robot_name = rpc_cli.getRobotNames()[0]
     robot_interface = rpc_cli.getRobotInterface(robot_name)
 
-    # 接口调用: 开启规划器
+    # API call: Start planner
     rpc_cli.getRuntimeMachine().start()
 
     time.sleep(1)
 
-    # 接口调用： 设置运动速度比例
+    # API call: Set motion speed fraction
     robot_interface.getMotionControl().setSpeedFraction(1)
 
-    # 运动函数的列表
+    # List of motion functions
     motions = [
         lambda: robot_interface.getMotionControl().moveJoint(joint_angle1, 80 * (math.pi / 180),
                                                              60 * (math.pi / 180), 0.0, 0),
@@ -79,61 +79,61 @@ def robot_motion_control(cli):
                                                              60 * (math.pi / 180), 0.0, 0)
     ]
 
-    # 循环执行运动指令，直到停止规划器且设置终止标志事件
+    # Loop to execute motion commands until planner is stopped and stop event is set
     while rpc_cli.getRuntimeMachine().getStatus() != RuntimeState.Stopped and not stop_event.is_set():
         execute_motion_sequence(motions)
 
 
 def control_operations(cli):
     while not stop_event.is_set():
-        input_cmd = input("请输入命令(p/r/s): p表示暂停运动，r表示恢复运动，s表示停止运动\n")
+        input_cmd = input("Please enter command (p/r/s): p means pause motion, r means resume motion, s means stop motion\n")
 
         if input_cmd == "p":
-            # 接口调用: 暂停运行时
+            # API call: Pause runtime
             cli.getRuntimeMachine().pause()
-            print("暂停运动")
+            print("Motion paused")
         elif input_cmd == "r":
-            # 接口调用: 恢复运行时
+            # API call: Resume runtime
             cli.getRuntimeMachine().resume()
-            print("恢复运动")
+            print("Motion resumed")
         elif input_cmd == "s":
-            # 接口调用: 停止运行时
+            # API call: Stop runtime
             cli.getRuntimeMachine().abort()
             robot_name = cli.getRobotNames()[0]
             robot_interface = cli.getRobotInterface(robot_name)
-            # 接口调用: 停止运动
+            # API call: Stop motion
             robot_interface.getMotionControl().stopJoint(30)
-            # 设置终止标志事件
+            # Set stop event
             stop_event.set()
-            print("停止运动")
+            print("Motion stopped")
         else:
-            print("无效命令，请重新输入")
+            print("Invalid command, please re-enter")
 
 
 if __name__ == "__main__":
     rpc_cli = RpcClient()
-    # 接口调用: 设置 RPC 超时
+    # API call: Set RPC timeout
     rpc_cli.setRequestTimeout(1000)
-    # 接口调用: 连接 RPC 服务
+    # API call: Connect to RPC service
     rpc_cli.connect(LOCAL_IP, 30004)
-    # 接口调用: 登录 RPC 服务
+    # API call: Login to RPC service
     rpc_cli.login("aubo", "123456")
 
-    # 创建终止标志事件
+    # Create stop event
     stop_event = threading.Event()
 
-    # 创建并启动运动控制线程和控制操作线程
+    # Create and start motion control thread and control operation thread
     motion_thread = threading.Thread(target=robot_motion_control, args=(rpc_cli, ))
     control_thread = threading.Thread(target=control_operations, args=(rpc_cli, ))
 
     motion_thread.start()
     control_thread.start()
 
-    # 等待运动线程结束
+    # Wait for motion thread to finish
     motion_thread.join()
     control_thread.join()
 
-    # 接口调用: 退出 RPC 登录
+    # API call: Logout from RPC
     rpc_cli.logout()
-    # 接口调用: 断开 RPC 连接
+    # API call: Disconnect RPC
     rpc_cli.disconnect()

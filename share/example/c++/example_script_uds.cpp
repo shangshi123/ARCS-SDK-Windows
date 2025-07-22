@@ -10,44 +10,44 @@ using namespace arcs::aubo_sdk;
 using namespace std;
 
 /**
- * 功能: 运行脚本程序
- * 步骤:
- * 第一步: 连接 SCRIPT 服务、机械臂登录
- * 第二步: 输入脚本文件名
- * 第三步: 读取文件，运行脚本程序。如果打开文件失败，则退出程序。
+ * Function: Run script program
+ * Steps:
+ * Step 1: Connect to SCRIPT service and log in to the robot arm
+ * Step 2: Enter the script file name
+ * Step 3: Read the file and run the script program. If opening the file fails, exit the program.
  */
-// 本示例程序需要发送一个可运行的脚本到arcs控制器,example/c++中test_io.lua文件是提供的一个脚本，运行程序前先将test_io.lua拷贝到可执行程序所在路径，然后运行example_script可执行程序，输入lua脚本名字(test_io.lua)
-// 运行前请注意机械臂周围无障碍物并且安全,遇到紧急情况按下急停按钮
+// This example program needs to send a runnable script to the arcs controller. The test_io.lua file in example/c++ is a provided script. Before running the example_script executable, copy test_io.lua to the executable's directory, then run the example_script executable and enter the lua script name (test_io.lua).
+// Before running, please make sure there are no obstacles around the robot arm and it is safe. In case of emergency, press the emergency stop button.
 
 #define LOCAL_IP "127.0.0.1"
 
 int main(int argc, char **argv)
 {
 #ifdef WIN32
-    // 将Windows控制台输出代码页设置为 UTF-8
+    // Set Windows console output code page to UTF-8
     SetConsoleOutputCP(CP_UTF8);
 #endif
 
     auto script = std::make_shared<ScriptClient>(1);
-    // 接口调用: 连接到 SCRIPT 服务
+    // API call: Connect to SCRIPT service
     script->connect();
-    // 接口调用: 登录
+    // API call: Log in
     script->login("aubo", "123456");
 
-    // 输入脚本文件名
+    // Enter script file name
     char file_name[20];
     cin >> file_name;
 
-    // 打开文件
+    // Open file
     ifstream file;
     file.open(file_name);
-    // 如果打开文件失败，则退出程序
+    // If opening the file fails, exit the program
     if (!file) {
         cout << "open fail." << endl;
         exit(1);
     }
 
-    // 读取并打印脚本文件中的内容
+    // Read and print the contents of the script file
     std::string str_all;
     while (!file.eof()) {
         std::string str_line;
@@ -56,16 +56,17 @@ int main(int argc, char **argv)
         str_all += "\n";
     }
     str_all += "\r\n\r\n";
-    cout << "脚本内容:" << endl << str_all << endl;
+    cout << "Script content:" << endl << str_all << endl;
     file.close();
 
-    // 发送脚本内容到控制器
+    // Send script content to controller
     script->sendString(str_all);
 
-    // 增加阻塞来保证执行完脚本
+    // Add blocking to ensure the script is executed
     while (1) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
     return 0;
 }
+

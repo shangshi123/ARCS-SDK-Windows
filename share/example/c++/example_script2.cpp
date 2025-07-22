@@ -10,45 +10,45 @@ using namespace arcs::aubo_sdk;
 using namespace std;
 
 /**
- * 功能: 运行本地脚本程序
- * 步骤:
- * 第一步: 连接 RPC 服务、机械臂登录
- * 第二步: 连接 SCRIPT 服务、机械臂登录
- * 第三步: 输入脚本文件名或者脚本绝对路径
- * 情况1：当lua脚本被拷贝到可执行程序所在路径（build/bin）下时，则输入脚本文件名
- * 情况2：当lua脚本没有在可执行程序所在路径（build/bin）下时，则输入脚本的绝对路径
- * 第四步: 读取文件，运行脚本程序。如果打开文件失败，则退出程序。
+ * Function: Run local script program
+ * Steps:
+ * Step 1: Connect to RPC service and log in to the robot arm
+ * Step 2: Connect to SCRIPT service and log in to the robot arm
+ * Step 3: Enter the script file name or absolute path
+ * Case 1: If the lua script is copied to the executable program path (build/bin), enter the script file name
+ * Case 2: If the lua script is not in the executable program path (build/bin), enter the absolute path of the script
+ * Step 4: Read the file and run the script program. If the file fails to open, exit the program.
  */
 
 #define LOCAL_IP "127.0.0.1"
 
 int main(int argc, char **argv) {
 #ifdef WIN32
-  // 将Windows控制台输出代码页设置为 UTF-8
+  // Set Windows console output code page to UTF-8
   SetConsoleOutputCP(CP_UTF8);
 #endif
   auto rpc = std::make_shared<RpcClient>();
-  // 接口调用: 设置 RPC 超时
+  // API call: Set RPC timeout
   rpc->setRequestTimeout(1000);
-  // 接口调用: 连接到 RPC 服务
+  // API call: Connect to RPC service
   rpc->connect(LOCAL_IP, 30004);
-  // 接口调用: 登录
+  // API call: Login
   rpc->login("aubo", "123456");
 
   auto script = std::make_shared<ScriptClient>();
-  // 接口调用: 连接到 SCRIPT 服务
+  // API call: Connect to SCRIPT service
   script->connect(LOCAL_IP, 30002);
-  // 接口调用: 登录
+  // API call: Login
   script->login("aubo", "123456");
 
-  // 输入脚本文件名
+  // Enter script file name
   char file_name[20];
   cin >> file_name;
 
-  // 打开文件
+  // Open file
   ifstream file;
   file.open(file_name);
-  // 如果打开文件失败，则退出程序
+  // If file fails to open, exit program
   if (!file) {
     cout << "open fail." << endl;
     exit(1);
@@ -56,40 +56,40 @@ int main(int argc, char **argv) {
 
   file.close();
 
-  // 接口调用: 发送本地的脚本文件到控制器
+  // API call: Send local script file to controller
   script->sendFile(file_name);
 
-  // 等待规划器启动
+  // Wait for planner to start
   int i = 0;
   while (1) {
     if (i++ > 5) {
-      std::cerr << "规划器启动失败" << std::endl;
+      std::cerr << "Planner failed to start" << std::endl;
       return -1;
     }
     if (rpc->getRuntimeMachine()->getStatus() == RuntimeState::Running) {
-      std::cout << "规划器启动成功，开始执行脚本" << std::endl;
+      std::cout << "Planner started successfully, begin executing script" << std::endl;
       break;
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
   }
 
-  // 等待规划器停止
+  // Wait for planner to stop
   while (1) {
     if (rpc->getRuntimeMachine()->getStatus() == RuntimeState::Stopped) {
-      std::cout << "规划器停止，脚本执行完成" << std::endl;
+      std::cout << "Planner stopped, script execution completed" << std::endl;
       break;
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
   }
 
-  // 接口调用: 退出登录
+  // API call: Logout
   rpc->logout();
-  // 接口调用: 断开连接
+  // API call: Disconnect
   rpc->disconnect();
 
-  // 接口调用: 退出登录
+  // API call: Logout
   script->logout();
-  // 接口调用: 断开连接
+  // API call: Disconnect
   script->disconnect();
 
   return 0;

@@ -2,54 +2,55 @@
 # coding=utf-8
 
 """
-机械臂上电与断电
+Robot Power On and Power Off
 
-步骤:
-第一步: 连接到 RPC 服务
-第二步: 机械臂登录
-第三步: 机械臂上电
-第四步: 机械臂断电
+Steps:
+Step 1: Connect to the RPC service
+Step 2: Robot login
+Step 3: Robot power on
+Step 4: Robot power off
 """
 
 import pyaubo_sdk
 import time
 
-robot_ip = "127.0.0.1"  # 服务器 IP 地址
-robot_port = 30004  # 端口号
+robot_ip = "127.0.0.1"  # Server IP address
+robot_port = 30004  # Port number
 M_PI = 3.14159265358979323846
 robot_rpc_client = pyaubo_sdk.RpcClient()
 
-# 机械臂上电
+# Robot power on
 def exampleStartup():
-    robot_name = robot_rpc_client.getRobotNames()[0]  # 接口调用: 获取机器人的名字
+    robot_name = robot_rpc_client.getRobotNames()[0]  # API call: Get the robot's name
     if 0 == robot_rpc_client.getRobotInterface(
-            robot_name).getRobotManage().poweron():  # 接口调用: 发起机器人上电请求
+            robot_name).getRobotManage().poweron():  # API call: Initiate robot power-on request
         print("The robot is requesting power-on!")
         if 0 == robot_rpc_client.getRobotInterface(
-                robot_name).getRobotManage().startup():  # 接口调用: 发起机器人启动请求
+                robot_name).getRobotManage().startup():  # API call: Initiate robot startup request
             print("The robot is requesting startup!")
-            # 循环直至机械臂松刹车成功
+            # Loop until the robot releases the brake successfully
             while 1:
                 robot_mode = robot_rpc_client.getRobotInterface(robot_name) \
-                    .getRobotState().getRobotModeType()  # 接口调用: 获取机器人的模式类型
+                    .getRobotState().getRobotModeType()  # API call: Get the robot's mode type
                 print("Robot current mode: %s" % (robot_mode.name))
                 if robot_mode == pyaubo_sdk.RobotModeType.Running:
                     break
                 time.sleep(1)
 
-# 机械臂断电
+# Robot power off
 def examplePoweroff():
-    robot_name = robot_rpc_client.getRobotNames()[0]  # 接口调用: 获取机器人的名字
+    robot_name = robot_rpc_client.getRobotNames()[0]  # API call: Get the robot's name
     if 0 == robot_rpc_client.getRobotInterface(
-            robot_name).getRobotManage().poweroff(): # 接口调用: 机械臂断电
+            robot_name).getRobotManage().poweroff(): # API call: Robot power off
         print("The robot is requesting power-off!")
 
 if __name__ == '__main__':
-    robot_rpc_client.connect(robot_ip, robot_port)  # 接口调用: 连接到 RPC 服务
+    robot_rpc_client.connect(robot_ip, robot_port)  # API call: Connect to the RPC service
     if robot_rpc_client.hasConnected():
         print("Robot rcp_client connected successfully!")
-        robot_rpc_client.login("aubo", "123456")  # 接口调用: 机械臂登录
+        robot_rpc_client.login("aubo", "123456")  # API call: Robot login
         if robot_rpc_client.hasLogined():
             print("Robot rcp_client logined successfully!")
-            exampleStartup()  # 机械臂上电
-            examplePoweroff()  # 机械臂断电
+            exampleStartup()  # Robot power on
+            examplePoweroff()  # Robot power off
+
