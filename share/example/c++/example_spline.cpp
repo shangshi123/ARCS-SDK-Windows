@@ -15,17 +15,16 @@ using namespace arcs::common_interface;
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
-
-// 实现阻塞功能: 当机械臂运动到目标路点时，程序再往下执行
+// Implements blocking: the program continues only after the robot reaches the target waypoint
 int waitArrival(RobotInterfacePtr impl) {
-  // 接口调用: 获取当前的运动指令 ID
+  // API call: Get the current motion command ID
   int exec_id = impl->getMotionControl()->getExecId();
 
   int cnt = 0;
-  // 在等待机械臂开始运动时，获取exec_id最大的重试次数
+  // Maximum retry count for getting exec_id while waiting for the robot to start moving
   int max_retry_count = 5;
 
-  // 等待机械臂开始运动
+  // Wait for the robot to start moving
   while (exec_id == -1) {
     if (cnt++ > max_retry_count) {
       return -1;
@@ -34,7 +33,7 @@ int waitArrival(RobotInterfacePtr impl) {
     exec_id = impl->getMotionControl()->getExecId();
   }
 
-  // 等待机械臂动作完成
+  // Wait for the robot motion to complete
   while (exec_id != -1) {
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
     exec_id = impl->getMotionControl()->getExecId();
@@ -43,19 +42,19 @@ int waitArrival(RobotInterfacePtr impl) {
   return 0;
 }
 
-// 等待样条运动完成
+// Wait for spline motion to finish
 void waitMoveSplineFinished(RpcClientPtr impl) {
-  // 接口调用: 获取机器人的名字
+  // API call: Get the robot's name
   auto robot_name = impl->getRobotNames().front();
 
   auto robot_interface = impl->getRobotInterface(robot_name);
 
-  std::cout << "等待样条运动开始" << std::endl;
-  // 等待样条运动开始
+  std::cout << "Waiting for spline motion to start" << std::endl;
+  // Wait for spline motion to start
   while (robot_interface->getMotionControl()->getExecId() == -1) {
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
   }
-  std::cout << "样条运动开始" << std::endl;
+  std::cout << "Spline motion started" << std::endl;
 
   while (1) {
     auto id = robot_interface->getMotionControl()->getExecId();
@@ -64,20 +63,20 @@ void waitMoveSplineFinished(RpcClientPtr impl) {
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
   }
-  std::cout << "样条运动结束" << std::endl;
+  std::cout << "Spline motion finished" << std::endl;
 }
 
 class TrajectoryIo {
 public:
-  // 构造函数，接受要打开的文件名作为参数
+  // Constructor, takes the filename to open as a parameter
   TrajectoryIo(const char *filename) {
     input_file_.open(filename, std::ios::in);
   }
 
-  // 检查文件是否成功打开
+  // Check if the file was opened successfully
   bool open() {
     if (!input_file_.is_open()) {
-      std::cerr << "无法打开轨迹文件. 请检查输入的文件路径是否正确."
+      std::cerr << "Unable to open trajectory file. Please check if the input file path is correct."
                 << std::endl;
       return false;
     }
@@ -85,10 +84,10 @@ public:
   }
   ~TrajectoryIo() { input_file_.close(); }
 
-  // 解析文件中的轨迹数据，
-  // 并将其转换为一个二维的 std::vector。
-  // 它逐行读取文件内容，将每行数据解析为一组 double 数值，
-  // 并将这些数值存储在一个嵌套的二维向量中。
+  // Parse trajectory data from the file,
+  // and convert it into a two-dimensional std::vector.
+  // It reads the file line by line, parses each line into a set of double values,
+  // and stores these values in a nested two-dimensional vector.
   std::vector<std::vector<double>> parse() {
     std::vector<std::vector<double>> res;
     std::string tmp;
@@ -107,14 +106,14 @@ public:
     return res;
   }
 
-  // 切割字符串并转换为 double 类型
+  // Split the string and convert to double type
   std::vector<double> split(const std::string &str, const char *delim) {
     std::vector<double> res;
     if ("" == str) {
       return res;
     }
-    // 先将要切割的字符串从string类型转换为char*类型
-    char *strs = new char[str.length() + 1]; // 不要忘了
+    // First convert the string to char* type
+    char *strs = new char[str.length() + 1]; // Don't forget
     std::strcpy(strs, str.c_str());
 
     char *p = std::strtok(strs, delim);
@@ -126,7 +125,7 @@ public:
         strs = nullptr;
         throw p;
       }
-      res.push_back(v); // 存入结果数组
+      res.push_back(v); // Store in result array
       p = std::strtok(nullptr, delim);
     }
 
@@ -139,65 +138,65 @@ public:
   }
 
 private:
-  std::ifstream input_file_; // 输入文件流
+  std::ifstream input_file_; // Input file stream
 };
 
-// 样条运动
+// Spline motion
 void exampleSpline(RpcClientPtr cli) {
-  // 读取轨迹文件
+  // Read trajectory file
   auto filename = "../trajs/coffee_spline.txt";
   TrajectoryIo input(filename);
 
-  // 尝试打开轨迹文件，如果无法打开，直接返回
+  // Try to open the trajectory file, if unable to open, return directly
   if (!input.open()) {
     return;
   }
 
-  // 解析轨迹数据
+  // Parse trajectory data
   auto traj = input.parse();
 
-  // 检查轨迹文件中是否有路点，
-  // 如果数量为 0，输出错误消息并返回
+  // Check if there are waypoints in the trajectory file,
+  // If the number is 0, output an error message and return
   auto traj_sz = traj.size();
   if (traj_sz == 0) {
-    std::cerr << "轨迹文件中的路点数量为0." << std::endl;
+    std::cerr << "The number of waypoints in the trajectory file is 0." << std::endl;
     return;
   }
 
-  // 接口调用: 获取机器人的名字
+  // API call: Get the robot's name
   auto robot_name = cli->getRobotNames().front();
 
   auto robot_interface = cli->getRobotInterface(robot_name);
 
-  // 接口调用: 设置机械臂的速度比率
+  // API call: Set the robot's speed fraction
   robot_interface->getMotionControl()->setSpeedFraction(0.3);
 
-  // 接口调用: 关节运动到轨迹文件中的第一个路点
+  // API call: Move joints to the first waypoint in the trajectory file
   std::vector<double> joint_angle = traj[0];
   cli->getRobotInterface(robot_name)
       ->getMotionControl()
       ->moveJoint(joint_angle, 80 * (M_PI / 180), 60 * (M_PI / 180), 0., 0.);
 
-  // 阻塞
+  // Blocking
   int ret = waitArrival(robot_interface);
   if (ret == 0) {
-    std::cout << "关节运动到轨迹文件中的第一个路点成功" << std::endl;
+    std::cout << "Successfully moved joints to the first waypoint in the trajectory file" << std::endl;
   } else {
-    std::cout << "关节运动到轨迹文件中的第一个路点失败" << std::endl;
+    std::cout << "Failed to move joints to the first waypoint in the trajectory file" << std::endl;
   }
 
-  std::cout << "添加轨迹文件中的路点" << std::endl;
-  // 接口调用: 添加轨迹文件中的路点
+  std::cout << "Adding waypoints from the trajectory file" << std::endl;
+  // API call: Add waypoints from the trajectory file
   for (int i = 1; i < (int)traj.size(); i++) {
     cli->getRobotInterface(robot_name)
         ->getMotionControl()
         ->moveSpline(traj[i], 1, 1, 0);
   }
 
-  // 接口调用: 当关节角参数传入为空时，结束路点添加。
-  // 等待算法计算完成后，机械臂开始执行样条运动。
-  // 所以，当添加的路点数量越多时，由于算法计算的耗时时间长，
-  // 机械臂可能不会立刻运动。
+  // API call: When the joint angle parameter is empty, stop adding waypoints.
+  // After waiting for the algorithm to finish calculating, the robot starts executing the spline motion.
+  // Therefore, the more waypoints added, the longer the algorithm calculation time,
+  // and the robot may not start moving immediately.
   cli->getRobotInterface(robot_name)
       ->getMotionControl()
       ->moveSpline({}, 1, 1, 0.005);
@@ -211,47 +210,47 @@ void printlog(int level, const char *source, int code, std::string content) {
 }
 
 /**
- * 功能: 关节空间的样条运动实现.txt文件中的离散轨迹
- * 步骤:
- * 第一步: 设置 RPC 超时、连接 RPC 服务、机械臂登录
- * 第二步: 连接 RTDE 服务、登录
- * 第三步: RTDE 设置话题、订阅话题来打印error_stack中的日志信息
- * 第四步: 读取解析.txt轨迹文件
- * 第五步: 添加文件中的路点，做样条运动
- * 第六步: RTDE 退出登录、断开连接
- * 第七步: RPC 退出登录、断开连接
+ * Function: Spline motion in joint space using discrete trajectory from .txt file
+ * Steps:
+ * Step 1: Set RPC timeout, connect to RPC service, robot login
+ * Step 2: Connect to RTDE service, login
+ * Step 3: RTDE set topic, subscribe to topic to print log information from error_stack
+ * Step 4: Read and parse .txt trajectory file
+ * Step 5: Add waypoints from the file and perform spline motion
+ * Step 6: RTDE logout and disconnect
+ * Step 7: RPC logout and disconnect
  */
 
 #define LOCAL_IP "127.0.0.1"
 
 int main(int argc, char **argv) {
 #ifdef WIN32
-  // 将Windows控制台输出代码页设置为 UTF-8
+  // Set Windows console output code page to UTF-8
   SetConsoleOutputCP(CP_UTF8);
 #endif
 
   auto rpc_cli = std::make_shared<RpcClient>();
-  // 接口调用: 设置 RPC 超时
+  // API call: Set RPC timeout
   rpc_cli->setRequestTimeout(1000);
-  // 接口调用: 连接到 RPC 服务
+  // API call: Connect to RPC service
   rpc_cli->connect(LOCAL_IP, 30004);
-  // 接口调用: 登录
+  // API call: Login
   rpc_cli->login("aubo", "123456");
 
   auto rtde_cli = std::make_shared<RtdeClient>();
-  // 接口调用: 连接到 RTDE 服务
+  // API call: Connect to RTDE service
   rtde_cli->connect(LOCAL_IP, 30010);
-  // 接口调用: 登录
+  // API call: Login
   rtde_cli->login("aubo", "123456");
 
-  // 接口调用: 设置 RTDE 话题
+  // API call: Set RTDE topic
   int topic = rtde_cli->setTopic(false, {"R1_message"}, 200, 0);
   if (topic < 0) {
-    std::cout << "设置话题失败!" << std::endl;
+    std::cout << "Failed to set topic!" << std::endl;
     return -1;
   }
 
-  // 接口调用: 订阅话题
+  // API call: Subscribe to topic
   rtde_cli->subscribe(topic, [](InputParser &parser) {
     arcs::common_interface::RobotMsgVector msgs;
     msgs = parser.popRobotMsgVector();
@@ -266,27 +265,27 @@ int main(int argc, char **argv) {
           break;
         }
       }
-      // 打印日志信息
+      // Print log information
       printlog(msg.level, msg.source.c_str(), msg.code, error_content);
     }
   });
 
-  // 样条运动
+  // Spline motion
   exampleSpline(rpc_cli);
 
-  // 等待样条运动完成
+  // Wait for spline motion to finish
   waitMoveSplineFinished(rpc_cli);
 
-  // 接口调用: 取消话题
+  // API call: Remove topic
   rtde_cli->removeTopic(false, topic);
-  // 接口调用: 退出登录
+  // API call: Logout
   rtde_cli->logout();
-  // 接口调用: 断开连接
+  // API call: Disconnect
   rtde_cli->disconnect();
 
-  // 接口调用: 退出登录
+  // API call: Logout
   rpc_cli->logout();
-  // 接口调用: 断开连接
+  // API call: Disconnect
   rpc_cli->disconnect();
 
   return 0;

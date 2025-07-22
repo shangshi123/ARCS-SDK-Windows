@@ -19,7 +19,7 @@ char *getTime(void)
 
 #ifdef WIN32
     SYSTEMTIME st;
-    GetSystemTime(&st); // 获取当前系统时间
+    GetSystemTime(&st); // Get current system time
     sprintf(sz_time, "%02d-%02d %02d:%02d:%02d.%03d", st.wMonth, st.wDay,
             st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
 #else
@@ -51,7 +51,7 @@ auto log_handler = [](int level, const char *filename, int line,
 
 void firmwareInstall(RpcClientPtr cli, const std::string &fw_file)
 {
-    // 接口调用: 获取机器人的名字
+    // API call: Get the robot's name
     auto robot_name = cli->getRobotNames().front();
 
     auto robot_interface = cli->getRobotInterface(robot_name);
@@ -65,7 +65,7 @@ void firmwareInstall(RpcClientPtr cli, const std::string &fw_file)
 
     std::cout << "update type : " << fw_file << std::endl;
 
-    // 升级固件
+    // Upgrade firmware
     int ret = robot_config->firmwareUpdate(fw_file);
     if (ret != 0) {
         std::cout << "update firmware error！ret : " << ret << std::endl;
@@ -73,11 +73,11 @@ void firmwareInstall(RpcClientPtr cli, const std::string &fw_file)
     }
 
     std::cout << "start update firmware " << std::endl;
-    // 增加延时，确保先进入维护模式，然后再通过getFirmwareUpdateProcess获取升级进度
+    // Add delay to ensure entering maintenance mode first, then get upgrade progress via getFirmwareUpdateProcess
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
     while (1) {
-        // 获取固件安装进度
+        // Get firmware installation progress
         std::tuple<std::string, double> update_process;
         try {
             update_process = robot_config->getFirmwareUpdateProcess();
@@ -127,39 +127,36 @@ void printUsage(char *pname)
     // clang-format on
 }
 
-// 定义 struct option 结构体，用于存储命令行选项的参数
-// struct option 用于 getopt_long 函数，它定义了每个长选项（如
-// --file）的结构信息。 以下是 struct option 各字段的含义：
+// Define struct option structure, used to store command line option parameters
+// struct option is used for getopt_long function, it defines the structure information for each long option (such as --file).
+// The following are the meanings of each field in struct option:
 struct option
 {
     const char
-        *name; // 选项的名称，例如 "help" 或 "file"，用于长选项（如 --help）
-    int has_arg; // 该选项是否需要参数。0 表示没有参数，1 表示有一个参数，2
-                 // 表示有多个参数
-    int *flag; // 如果非 nullptr，表示该选项的状态存储地址。如果该值为
-               // nullptr，则 getopt_long 会返回一个值给 val
-    int val; // 如果 flag 为 nullptr，该值是 getopt_long 返回的选项标识符，例如
-             // 'h'，表示该选项的具体值
+        *name; // Option name, such as "help" or "file", used for long options (such as --help)
+    int has_arg; // Whether the option requires a parameter. 0 means no parameter, 1 means one parameter, 2 means multiple parameters
+    int *flag; // If not nullptr, indicates the storage address of the option's status. If this value is nullptr, getopt_long returns a value to val
+    int val; // If flag is nullptr, this value is the option identifier returned by getopt_long, such as 'h', indicating the specific value of the option
 };
 
-// 模拟 getopt_long 函数
+// Simulate getopt_long function
 int getopt_long(int argc, char *const argv[], const char *optstring,
                 const struct option *longopts, int *longindex, char *&arg)
 {
-    static int currentArg = 1; // 当前处理的参数索引
+    static int currentArg = 1; // Current argument index
 
     constexpr int required_argument = 1;
     constexpr int no_argument = 0;
     if (currentArg >= argc) {
-        return -1; // 没有更多参数
+        return -1; // No more arguments
     }
 
     const char *currentOption = argv[currentArg];
 
     if (currentOption[0] == '-') {
-        // 检查长选项
+        // Check long option
         if (currentOption[1] == '-') {
-            const char *longOption = &currentOption[2]; // 去掉前缀"--"
+            const char *longOption = &currentOption[2]; // Remove prefix "--"
             for (int i = 0; longopts[i].name != nullptr; ++i) {
                 if (strcmp(longOption, longopts[i].name) == 0) {
                     if (longindex) {
@@ -168,7 +165,7 @@ int getopt_long(int argc, char *const argv[], const char *optstring,
 
                     if (longopts[i].has_arg == required_argument) {
                         if (currentArg + 1 < argc) {
-                            arg = argv[++currentArg]; // 获取参数值
+                            arg = argv[++currentArg]; // Get parameter value
                         } else {
                             std::cerr << "Option --" << longOption
                                       << " requires an argument!" << std::endl;
@@ -185,16 +182,16 @@ int getopt_long(int argc, char *const argv[], const char *optstring,
             return '?';
         }
 
-        // 检查短选项
+        // Check short option
         char option = currentOption[1];
         const char *optFound = strchr(optstring, option);
 
         if (optFound) {
             ++currentArg;
             if (optFound[1] == ':') {
-                // 如果选项需要一个参数
+                // If the option requires a parameter
                 if (currentArg < argc) {
-                    arg = argv[currentArg++]; // 获取参数值
+                    arg = argv[currentArg++]; // Get parameter value
                 } else {
                     std::cerr << "Option -" << option
                               << " requires an argument!" << std::endl;
@@ -209,17 +206,17 @@ int getopt_long(int argc, char *const argv[], const char *optstring,
         }
     }
 
-    return -1; // 不是选项
+    return -1; // Not an option
 }
 
 int main(int argc, char **argv)
 {
 #ifdef WIN32
-    // 将Windows控制台输出代码页设置为 UTF-8
+    // Set Windows console output code page to UTF-8
     SetConsoleOutputCP(CP_UTF8);
 #endif
     int opt = -1;
-    char *optarg = nullptr; // 用于存储选项的参数值
+    char *optarg = nullptr; // Used to store the parameter value of the option
     std::string fw_file = "";
     std::string target_ip = "127.0.0.1";
     std::string target_node = "all";
@@ -275,6 +272,7 @@ int main(int argc, char **argv)
         size_t pos = 0;
         while ((pos = target_node.find(',', pos)) != std::string::npos) {
             target_node.replace(pos, 1, "!,");
+
             pos += 2;
         }
         target_node += "!";
@@ -291,9 +289,9 @@ int main(int argc, char **argv)
                       << rpc_connect_ret << std::endl;
         }
 #ifdef WIN32
-        Sleep(1000); // Windows 下休眠 1 秒
+        Sleep(1000); // Sleep 1 second on Windows
 #else
-        sleep(1); // Unix 下休眠 1 秒
+        sleep(1); // Sleep 1 second on Unix
 #endif
 
     } while (rpc_connect_ret != AUBO_OK);
@@ -302,12 +300,12 @@ int main(int argc, char **argv)
     if (rpc_login_ret < 0) {
         std::cout << "rpc login error, ret = " << rpc_login_ret << std::endl;
     }
-    // 固件安装
+    // Firmware installation
     firmwareInstall(rpc_cli, fw_file + "#" + target_node);
 
-    // 接口调用: 退出登录
+    // API call: logout
     rpc_cli->logout();
-    // 接口调用: 断开连接
+    // API call: disconnect
     rpc_cli->disconnect();
 
     return 0;

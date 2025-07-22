@@ -174,47 +174,47 @@ void exampleModbusTcp(RpcClientPtr impl)
         5 = write register output
     **/
 
-    // 发送自定义数据
+    // Send custom data
     impl->getRegisterControl()->modbusSendCustomCommand(
         MODBUS_IP, 1, 0x06, { 0x00, 0x02, 0x00, 0x0F });
 
-    // 写单个线圈
+    // Write single coil
     impl->getRegisterControl()->modbusAddSignal(MODBUS_IP, 1, 0x00, 0x04,
                                                 "WRITE_COLI_OUTPUT_01", true);
     auto res = impl->getRegisterControl()->modbusSetOutputSignal(
         "WRITE_COLI_OUTPUT_01", 0x01);
 
-    // 写单个保持寄存器
+    // Write single holding register
     impl->getRegisterControl()->modbusAddSignal(
         MODBUS_IP, 1, 0x00, 0x05, "WRITE_HOLDING_REGISTER_OUTPUT_01", true);
     res = impl->getRegisterControl()->modbusSetOutputSignal(
         "WRITE_HOLDING_REGISTER_OUTPUT_01", 0x4455);
 
-    // 读线圈寄存器（ip,站号,寄存器起始地址,功能码,名字）
+    // Read coil register (ip, station number, register start address, function code, name)
     impl->getRegisterControl()->modbusAddSignal(MODBUS_IP, 1, 0x00, 0x01,
                                                 "READ_COIL_00", true);
     impl->getRegisterControl()->modbusSetSignalUpdateFrequency("READ_COIL_00",
                                                                1);
 
-    // 读离散输入寄存器
+    // Read discrete input register
     impl->getRegisterControl()->modbusAddSignal(MODBUS_IP, 1, 0x00, 0x00,
                                                 "READ_INPUT_00", true);
     impl->getRegisterControl()->modbusSetSignalUpdateFrequency("READ_INPUT_00",
                                                                1);
 
-    // 读保持寄存器
+    // Read holding register
     impl->getRegisterControl()->modbusAddSignal(
         MODBUS_IP, 1, 0x00, 0x03, "READ_HOLDING_REGISTER_00", true);
     impl->getRegisterControl()->modbusSetSignalUpdateFrequency(
         "READ_HOLDING_REGISTER_00", 1);
 
-    // 读输入寄存器
+    // Read input register
     impl->getRegisterControl()->modbusAddSignal(MODBUS_IP, 1, 0x00, 0x02,
                                                 "READ_INPUT_REGISTER_00", true);
     impl->getRegisterControl()->modbusSetSignalUpdateFrequency(
         "READ_INPUT_REGISTER_00", 1);
 
-    // 等待对应信号的数据第一次获取完成
+    // Wait for the first data acquisition of the corresponding signal
     std::this_thread::sleep_for(std::chrono::seconds(3));
 
     for (int i = 0; i < 100; i++) {
@@ -241,7 +241,7 @@ void exampleModbusTcp(RpcClientPtr impl)
             "WRITE_COLI_OUTPUT_01", 0x00);
     }
 
-    // 发送自定义数据
+    // Send custom data
     impl->getRegisterControl()->modbusSendCustomCommand(
         MODBUS_IP, 1, 0x06, { 0x00, 0x03, 0x01, 0xFF });
 
@@ -252,162 +252,4 @@ void exampleModbusTcp(RpcClientPtr impl)
     impl->getRegisterControl()->modbusDeleteSignal("READ_INPUT_00");
     impl->getRegisterControl()->modbusDeleteSignal("READ_HOLDING_REGISTER_00");
     impl->getRegisterControl()->modbusDeleteSignal("READ_INPUT_REGISTER_00");
-}
-
-void exampleModbusRtu(RpcClientPtr impl)
-{
-    /**
-        0 = read digital input
-        1 = read digital output
-        2 = read register input
-        3 = read register output
-        4 = write digital output
-        5 = write register output
-    **/
-    // Send custom data
-    impl->getRegisterControl()->modbusSendCustomCommand(
-        MODBUS_SERIAL_PORT, 1, 0x06, { 0x00, 0x02, 0x00, 0x0F, 0x68, 0x0E });
-
-    // Write single coil
-    impl->getRegisterControl()->modbusAddSignal(
-        MODBUS_SERIAL_PORT, 1, 0x01, 0x04, "WRITE_COLI_OUTPUT_02", true);
-
-    impl->getRegisterControl()->modbusSetOutputSignal("WRITE_COLI_OUTPUT_02",
-                                                      0x01);
-
-    // Write single holding register
-    impl->getRegisterControl()->modbusAddSignal(
-        MODBUS_SERIAL_PORT, 1, 0x00, 0x05, "WRITE_HOLDING_REGISTER_OUTPUT_01",
-        true);
-
-    impl->getRegisterControl()->modbusSetOutputSignal(
-        "WRITE_HOLDING_REGISTER_OUTPUT_01", 0x4455);
-
-    // Read coil register (ip, station number, register start address, function code, name)
-    impl->getRegisterControl()->modbusAddSignal(MODBUS_SERIAL_PORT, 1, 0x00,
-                                                0x01, "READ_COIL_00", true);
-    impl->getRegisterControl()->modbusSetSignalUpdateFrequency("READ_COIL_00",
-                                                               1);
-
-    // Read discrete input register
-    impl->getRegisterControl()->modbusAddSignal(MODBUS_SERIAL_PORT, 1, 0x00,
-                                                0x00, "READ_INPUT_00", true);
-    impl->getRegisterControl()->modbusSetSignalUpdateFrequency("READ_INPUT_00",
-                                                               1);
-
-    // Read holding register
-    impl->getRegisterControl()->modbusAddSignal(
-        MODBUS_SERIAL_PORT, 1, 0x00, 0x03, "READ_HOLDING_REGISTER_00", true);
-    impl->getRegisterControl()->modbusSetSignalUpdateFrequency(
-        "READ_HOLDING_REGISTER_00", 1);
-
-    // Read input register
-    impl->getRegisterControl()->modbusAddSignal(
-        MODBUS_SERIAL_PORT, 1, 0x00, 0x02, "READ_INPUT_REGISTER_00", true);
-    impl->getRegisterControl()->modbusSetSignalUpdateFrequency(
-        "READ_INPUT_REGISTER_00", 1);
-
-    // Wait for the first data acquisition of the corresponding signal
-    std::this_thread::sleep_for(std::chrono::seconds(2));
-
-    for (int i = 0; i < 100; i++) {
-        std::cout << "-------------------------" << i << std::endl;
-        auto ret =
-            impl->getRegisterControl()->modbusGetSignalStatus("READ_COIL_00");
-        std::cout << "READ_COIL_00:" << ret << std::endl;
-
-        auto ret2 =
-            impl->getRegisterControl()->modbusGetSignalStatus("READ_INPUT_00");
-        std::cout << "READ_INPUT_00:" << ret2 << std::endl;
-
-        auto ret3 = impl->getRegisterControl()->modbusGetSignalStatus(
-            "READ_HOLDING_REGISTER_00");
-        std::cout << "READ_HOLDING_REGISTER_00:" << ret3 << std::endl;
-
-        auto ret4 = impl->getRegisterControl()->modbusGetSignalStatus(
-            "READ_INPUT_REGISTER_00");
-        std::cout << "READ_INPUT_REGISTER_00:" << ret4 << std::endl;
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-
-    for (int i = 0; i < 10; i++) {
-        impl->getRegisterControl()->modbusSetOutputSignal(
-            "WRITE_COLI_OUTPUT_02", 0x01);
-        impl->getRegisterControl()->modbusSetOutputSignal(
-            "WRITE_COLI_OUTPUT_02", 0x00);
-    }
-
-    impl->getRegisterControl()->modbusDeleteSignal("WRITE_COLI_OUTPUT_02");
-    impl->getRegisterControl()->modbusDeleteSignal(
-        "WRITE_HOLDING_REGISTER_OUTPUT_01");
-    impl->getRegisterControl()->modbusDeleteSignal("READ_COIL_00");
-    impl->getRegisterControl()->modbusDeleteSignal("READ_INPUT_00");
-    impl->getRegisterControl()->modbusDeleteSignal("READ_HOLDING_REGISTER_00");
-    impl->getRegisterControl()->modbusDeleteSignal("READ_INPUT_REGISTER_00");
-}
-
-void exampleModbusTcpAction(RpcClientPtr impl)
-{
-    /**
-        0 = read digital input
-        1 = read digital output
-        2 = read register input
-        3 = read register output
-        4 = write digital output
-        5 = write register output
-    **/
-    // Write single coil
-    impl->getRegisterControl()->modbusAddSignal(MODBUS_IP, 1, 0x00, 0x04,
-                                                "WRITE_COLI_OUTPUT_00", true);
-
-    // Read coil register (ip, station number, register start address, function code, name)
-    impl->getRegisterControl()->modbusAddSignal(MODBUS_IP, 1, 0x00, 0x01,
-                                                "READ_COIL_00", true);
-    impl->getRegisterControl()->modbusSetSignalUpdateFrequency("READ_COIL_00",
-                                                               1);
-
-    // Default, 0,  "No trigger"
-    // Freedrive, 1, "Trigger hand-guided teaching"
-    // Set action to freedrive
-    impl->getRegisterControl()->modbusSetDigitalInputAction(
-        "rob1", "READ_COIL_00", StandardInputAction::Handguide);
-
-    // Set to 1, enable freedrive
-    auto res = impl->getRegisterControl()->modbusSetOutputSignal(
-        "WRITE_COLI_OUTPUT_00", 0x01);
-
-    std::this_thread::sleep_for(std::chrono::seconds(10));
-
-    // Set to 0, disable freedrive
-    res = impl->getRegisterControl()->modbusSetOutputSignal(
-        "WRITE_COLI_OUTPUT_00", 0x00);
-
-    std::this_thread::sleep_for(std::chrono::seconds(10));
-    impl->getRegisterControl()->modbusDeleteSignal("READ_COIL_00");
-    impl->getRegisterControl()->modbusDeleteSignal("WRITE_COLI_OUTPUT_00");
-}
-
-int main(int argc, char **argv)
-{
-    // Test slave: modsim32 software
-    // In arcs controller, modbus-tcp update cycle is 10ms
-    // In arcs controller, modbus-rtu update cycle is 40ms (to ensure command response success, need command send interval) * number of register types + 150ms (modbus_rtu request time) * number of register types + 10ms (thread loop cycle).
-    // modbus-rtu  baud rate 9600  number of same frequency register types  supported read frequency    write response time
-    //                          1                   5hz      about 250ms
-    //                          2                   2.5hz    about 500ms
-    //                          3                   1.2hz    about 500ms
-    //                          4                   1hz      about 500ms
-
-    auto rpc_cli = std::make_shared<RpcClient>();
-    rpc_cli->connect(LOCAL_IP, 30004);
-    rpc_cli->login("aubo", "123456");
-    rpc_cli->setRequestTimeout(5000); // Sometimes rtu connection needs two seconds
-
-    exampleRegisterInput(rpc_cli);
-    exampleRegisterOutput(rpc_cli);
-    exampleRegisterCustom(rpc_cli);
-    exampleModbusTcp(rpc_cli);
-    exampleModbusRtu(rpc_cli);
-    // exampleModbusTcpAction(rpc_cli);
 }

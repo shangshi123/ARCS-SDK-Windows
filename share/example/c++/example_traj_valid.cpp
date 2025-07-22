@@ -11,45 +11,45 @@
 using namespace arcs::common_interface;
 using namespace arcs::aubo_sdk;
 
-// 检查给定的轨迹是否有效，进行插值和逆解验证
+// Check whether the given trajectory is valid, perform interpolation and inverse kinematics verification
 bool exampleTrajectoryValid(RpcClientPtr impl, const std::vector<double> &p1,
                             const std::vector<double> &p2, int num_points)
 {
-    // 如果num_points小于2，则无法进行插值
+    // If num_points is less than 2, interpolation cannot be performed
     if (num_points < 2) {
         throw std::invalid_argument("num_points must be at least 2");
     }
 
-    // 接口调用: 获取机器人的名字
+    // API call: Get the robot's name
     auto robot_name = impl->getRobotNames().front();
 
-    // 接口调用: 设置 tcp 偏移
+    // API call: Set tcp offset
     std::vector<double> offset = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
     impl->getRobotInterface(robot_name)->getRobotConfig()->setTcpOffset(offset);
 
-    // 计算每个插值点的alpha值，并调用interpolatePose
+    // Calculate the alpha value for each interpolation point and call interpolatePose
     for (int i = 0; i < num_points; ++i) {
         double alpha =
-            static_cast<double>(i) / (num_points - 1); // alpha从0到1均匀变化
+            static_cast<double>(i) / (num_points - 1); // alpha varies evenly from 0 to 1
 
-        // 接口调用: 计算线性差值
+        // API call: Calculate linear interpolation
         auto pose = impl->getMath()->interpolatePose(p1, p2, alpha);
 
-        // 接口调用: 根据计算出的差值位姿，检查是否能找到有效的逆解
+        // API call: Based on the calculated interpolated pose, check whether a valid inverse solution can be found
         auto result = impl->getRobotInterface(robot_name)
                           ->getRobotAlgorithm()
                           ->inverseKinematicsAll(pose);
 
         if (std::get<1>(result) != 0) {
-            std::cout << "逆解失败, inverseKinematicsAll返回值:"
+            std::cout << "Inverse kinematics failed, inverseKinematicsAll return value:"
                       << std::get<1>(result) << std::endl;
-            std::cout << "轨迹规划失败" << std::endl;
+            std::cout << "Trajectory planning failed" << std::endl;
             return false;
         }
     }
 
-    // 如果所有插值点均有效，表示轨迹规划成功
-    std::cout << "轨迹规划成功" << std::endl;
+    // If all interpolation points are valid, trajectory planning is successful
+    std::cout << "Trajectory planning succeeded" << std::endl;
     return true;
 }
 
@@ -58,30 +58,30 @@ bool exampleTrajectoryValid(RpcClientPtr impl, const std::vector<double> &p1,
 int main(int argc, char **argv)
 {
 #ifdef WIN32
-    // 将Windows控制台输出代码页设置为 UTF-8
+    // Set Windows console output code page to UTF-8
     SetConsoleOutputCP(CP_UTF8);
 #endif
     auto rpc_cli = std::make_shared<RpcClient>();
-    // 接口调用: 设置 RPC 超时, 单位: ms
+    // API call: Set RPC timeout, unit: ms
     rpc_cli->setRequestTimeout(1000);
-    // 接口调用: 连接到 RPC 服务
+    // API call: Connect to RPC service
     rpc_cli->connect(LOCAL_IP, 30004);
-    // 接口调用: 登录
+    // API call: Login
     rpc_cli->login("aubo", "123456");
 
-    // 起始位姿和目标位姿
+    // Starting pose and target pose
     std::vector<double> pose1 = { 0.551, -0.295, 0.261, -3.135, 0.0, 1.569 };
     std::vector<double> pose2 = { 0.551, 0.295, 0.261, -3.135, 0.0, 0 };
 
-    // 插值点数量
+    // Number of interpolation points
     int num_points = 30;
 
-    // 检查给定的轨迹是否有效，进行插值和逆解验证
+    // Check whether the given trajectory is valid, perform interpolation and inverse kinematics verification
     exampleTrajectoryValid(rpc_cli, pose1, pose2, num_points);
 
-    // 接口调用: 退出登录
+    // API call: Logout
     rpc_cli->logout();
-    // 接口调用: 断开连接
+    // API call: Disconnect
     rpc_cli->disconnect();
 
     return 0;

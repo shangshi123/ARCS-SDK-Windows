@@ -2,27 +2,27 @@
 # coding=utf-8
 
 """
-servoj 运动
+servoj motion
 
-步骤:
-第一步: 连接到 RPC 服务、机械臂登录、设置RPC请求超时时间
-第二步: 读取 .offt 轨迹文件
-第三步: 关节运动到轨迹中的第一个点
-第四步: 开启 servo 模式
-第五步: 做 servoj 运动
-第六步: 关闭 servo 模式
-第七步: 断开 RPC 连接
+Steps:
+Step 1: Connect to the RPC service, robot login, set RPC request timeout
+Step 2: Read .offt trajectory file
+Step 3: Move joints to the first point in the trajectory
+Step 4: Enable servo mode
+Step 5: Perform servoj motion
+Step 6: Disable servo mode
+Step 7: Disconnect RPC connection
 """
 import pyaubo_sdk
 import time
 
-robot_ip = "127.0.0.1"  # 服务器 IP 地址
-robot_port = 30004  # 端口号
+robot_ip = "127.0.0.1"  # Server IP address
+robot_port = 30004  # Port number
 M_PI = 3.14159265358979323846
 robot_rpc_client = pyaubo_sdk.RpcClient()
 
 
-# 阻塞
+# Blocking
 def waitArrival(impl):
     cnt = 0
     while impl.getMotionControl().getExecId() == -1:
@@ -40,10 +40,10 @@ def waitArrival(impl):
         time.sleep(0.05)
 
 def servoj():
-    robot_name = robot_rpc_client.getRobotNames()[0]  # 接口调用: 获取机器人的名字
+    robot_name = robot_rpc_client.getRobotNames()[0]  # API call: Get the robot's name
     robot = robot_rpc_client.getRobotInterface(robot_name)
 
-    # 读取轨迹文件并加载轨迹点
+    # Read trajectory file and load trajectory points
     file = open('../c++/trajs/record6.offt')
     traj = []
     for line in file:
@@ -55,19 +55,19 @@ def servoj():
 
     traj_sz = len(traj)
     if traj_sz == 0:
-        print("没有轨迹点")
+        print("No trajectory points")
     else:
-        print("加载的轨迹点数量为: ", traj_sz)
+        print("Number of loaded trajectory points: ", traj_sz)
 
-    # 关节运动到第一个点
-    # 当前位置要与轨迹中的第一个点一致，否则容易引起较大超调
+    # Move joints to the first point
+    # The current position must be consistent with the first point in the trajectory, otherwise it is easy to cause large overshoot
     print("goto p1")
     robot_rpc_client.getRuntimeMachine().start()
     mc = robot.getMotionControl()
     mc.moveJoint(traj[0], M_PI, M_PI, 0., 0.)
     waitArrival(robot)
 
-    # 开启 servo 模式
+    # Enable servo mode
     robot.getMotionControl().setServoMode(True)
     i = 0
     while not mc.isServoModeEnabled():
@@ -82,20 +82,20 @@ def servoj():
         mc.servoJoint(q, 0.1, 0.2, 0.005, 0.1, 200)
         time.sleep(0.005)
 
-    # 关闭 servo 模式
+    # Disable servo mode
     mc.setServoMode(False)
     print("Servoj end")
     return 0
 
 
 if __name__ == '__main__':
-    robot_rpc_client.setRequestTimeout(1000)  # 接口调用: 设置 RPC 请求超时时间
-    robot_rpc_client.connect(robot_ip, robot_port)  # 接口调用: 连接到 RPC 服务
+    robot_rpc_client.setRequestTimeout(1000)  # API call: Set RPC request timeout
+    robot_rpc_client.connect(robot_ip, robot_port)  # API call: Connect to RPC service
     if robot_rpc_client.hasConnected():
         print("Robot rcp_client connected successfully!")
-        robot_rpc_client.login("aubo", "123456")  # 接口调用: 机械臂登录
+        robot_rpc_client.login("aubo", "123456")  # API call: Robot login
         if robot_rpc_client.hasLogined():
             print("Robot rcp_client logined successfully!")
             servoj()
-            robot_rpc_client.disconnect()  # 接口调用: 断开RPC连接
+            robot_rpc_client.disconnect()  # API call: Disconnect RPC connection
 

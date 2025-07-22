@@ -2,31 +2,31 @@
 # coding=utf-8
 
 """
-功能：机械臂ServoJ运动
+Function: Robot Arm ServoJ Motion
 
-步骤:
-第一步: 设置 RPC 超时、连接 RPC 服务、机械臂登录
-第二步: ServoJ运动
-第三步: RPC 退出登录、断开连接
+Steps:
+Step 1: Set RPC timeout, connect to RPC service, robot arm login
+Step 2: ServoJ motion
+Step 3: RPC logout, disconnect
 """
 
 import time
 import math
 import pyaubo_sdk
 
-robot_ip = "127.0.0.1"  # 机械臂 IP 地址
-robot_port = 30004  # 端口号
+robot_ip = "127.0.0.1"  # Robot arm IP address
+robot_port = 30004  # Port number
 
 
-# 阻塞
+# Blocking
 def wait_arrival(robot_interface):
     max_retry_count = 5
     cnt = 0
 
-    # 接口调用: 获取当前的运动指令 ID
+    # API call: Get current motion command ID
     exec_id = robot_interface.getMotionControl().getExecId()
 
-    # 等待机械臂开始运动
+    # Wait for the robot arm to start moving
     while exec_id == -1:
         if cnt > max_retry_count:
             return -1
@@ -34,7 +34,7 @@ def wait_arrival(robot_interface):
         cnt += 1
         exec_id = robot_interface.getMotionControl().getExecId()
 
-    # 等待机械臂运动完成
+    # Wait for the robot arm to finish moving
     while robot_interface.getMotionControl().getExecId() != -1:
         time.sleep(0.05)
 
@@ -42,46 +42,46 @@ def wait_arrival(robot_interface):
 
 
 """
-测试: 让1关节旋转120度，规划时间为10秒，
-在第5秒时下发第二个点，让第三关节旋转90度
-结论: 在机器人没到达目标点前，下发新目标点，
-机器人会放弃原目标点，直接向新的目标点运动
+Test: Rotate joint 1 by 120 degrees, planning time is 10 seconds,
+At the 5th second, send the second point, rotate joint 3 by 90 degrees
+Conclusion: If a new target point is sent before the robot reaches the target point,
+the robot will abandon the original target point and move directly to the new target point
 """
 
 
 def example_servoj(rpc_client):
-    # 关节角，单位: 弧度
+    # Joint angles, unit: radians
     q = [0.0 * (math.pi / 180), -15.0 * (math.pi / 180), 100.0 * (math.pi / 180),
          25.0 * (math.pi / 180), 90.0 * (math.pi / 180), 0.0 * (math.pi / 180)
          ]
 
-    # 接口调用：获取机器人的名字
+    # API call: Get the robot's name
     robot_name = rpc_client.getRobotNames()[0]
 
     robot_interface = rpc_client.getRobotInterface(robot_name)
 
-    # 接口调用: 设置机械臂的速度比率
+    # API call: Set the robot arm speed ratio
     robot_interface.getMotionControl().setSpeedFraction(0.75)
 
-    # 关节运动到路点 q
+    # Move joints to waypoint q
     robot_interface.getMotionControl() \
         .moveJoint(q, 80 * (math.pi / 180), 60 * (math.pi / 180), 0, 0)
 
-    # 阻塞
+    # Blocking
     ret = wait_arrival(robot_interface)
     if ret == 0:
-        print("关节运动到初始位置成功")
+        print("Joint moved to initial position successfully")
     else:
-        print("关节运动到初始位置失败")
+        print("Joint failed to move to initial position")
 
-    # 接口调用: 开启Servo 模式
+    # API call: Enable Servo mode
     robot_interface.getMotionControl().setServoMode(True)
 
-    # 等待进入 Servo 模式
+    # Wait to enter Servo mode
     i = 0
     while not robot_interface.getMotionControl().isServoModeEnabled():
         if i > 5:
-            print("Servo 模式使能失败! 当前Servo 状态为 ", robot_interface
+            print("Failed to enable Servo mode! Current Servo status is ", robot_interface
                   .getMotionControl()
                   .isServoModeEnabled())
             return -1
@@ -91,31 +91,31 @@ def example_servoj(rpc_client):
     q1 = [-120.0 * (math.pi / 180), -15.0 * (math.pi / 180),
           100.0 * (math.pi / 180), 25.0 * (math.pi / 180),
           90.0 * (math.pi / 180), 0.0 * (math.pi / 180)]
-    print("向第一个目标点运动")
-    # 接口调用: 关节伺服运动
+    print("Moving to the first target point")
+    # API call: Joint servo motion
     robot_interface.getMotionControl().servoJoint(q1, 0.0, 0.0, 10, 0.0, 0.0)
 
     time.sleep(5)
 
     q2 = [0, 0, 90.0 / 180 * math.pi, 0, 0, 0]
-    print("向第二个目标点运动")
-    # 接口调用: 关节伺服运动
+    print("Moving to the second target point")
+    # API call: Joint servo motion
     robot_interface.getMotionControl().servoJoint(q2, 0.0, 0.0, 10, 0.0, 0.0)
 
-    # 等待运动结束
+    # Wait for motion to finish
     while not robot_interface.getRobotState().isSteady():
         time.sleep(0.005)
 
-    print("ServoJ 运动结束")
+    print("ServoJ motion finished")
 
-    # 关闭Servo 模式
+    # Disable Servo mode
     robot_interface.getMotionControl().setServoMode(False)
 
-    # 等待结束 Servo 模式
+    # Wait to exit Servo mode
     i = 0
     while robot_interface.getMotionControl().isServoModeEnabled():
         if i > 5:
-            print("Servo 模式失能失败! 当前的 Servo 模式是 ",
+            print("Failed to disable Servo mode! Current Servo mode is ",
                   robot_interface.getMotionControl().isServoModeEnabled())
             return -1
         time.sleep(0.005)
@@ -126,13 +126,14 @@ def example_servoj(rpc_client):
 
 if __name__ == '__main__':
     robot_rpc_client = pyaubo_sdk.RpcClient()
-    robot_rpc_client.setRequestTimeout(1000)  # 接口调用: 设置 RPC 超时
-    robot_rpc_client.connect(robot_ip, robot_port)  # 接口调用: 连接 RPC 服务
+    robot_rpc_client.setRequestTimeout(1000)  # API call: Set RPC timeout
+    robot_rpc_client.connect(robot_ip, robot_port)  # API call: Connect to RPC service
     if robot_rpc_client.hasConnected():
-        print("RPC客户端连接成功!")
-        robot_rpc_client.login("aubo", "123456")  # 接口调用: 登录
+        print("RPC client connected successfully!")
+        robot_rpc_client.login("aubo", "123456")  # API call: Login
         if robot_rpc_client.hasLogined():
-            print("RPC客户端登录成功!")
-            example_servoj(robot_rpc_client)  # ServoJ示例
-            robot_rpc_client.logout()  # 退出登录
-            robot_rpc_client.disconnect()  # 断开连接
+            print("RPC client logged in successfully!")
+            example_servoj(robot_rpc_client)  # ServoJ example
+            robot_rpc_client.logout()  # Logout
+            robot_rpc_client.disconnect()  # Disconnect
+

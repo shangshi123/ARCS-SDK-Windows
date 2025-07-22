@@ -2,29 +2,29 @@
 # coding=utf-8
 
 """
-机械臂圆弧运动
+Robot Arm Arc Motion
 
-步骤:
-第一步: 连接到 RPC 服务
-第二步: 机械臂登录
-第三步: 圆弧运动
+Steps:
+Step 1: Connect to RPC service
+Step 2: Robot login
+Step 3: Arc motion
 """
 
 import time
 import math
 import pyaubo_sdk
 
-robot_ip = "127.0.0.1"  # 服务器 IP 地址
-robot_port = 30004  # 端口号
+robot_ip = "127.0.0.1"  # Server IP address
+robot_port = 30004  # Port number
 M_PI = 3.14159265358979323846
 robot_rpc_client = pyaubo_sdk.RpcClient()
 
-waypoint1 = []  # 圆弧轨迹的起始路点（位姿）
-waypoint2 = []  # 圆弧轨迹的中间路点（位姿）
-waypoint3 = []  # 圆弧轨迹的终止路点（位姿）
+waypoint1 = []  # Starting waypoint (pose) of the arc trajectory
+waypoint2 = []  # Middle waypoint (pose) of the arc trajectory
+waypoint3 = []  # Ending waypoint (pose) of the arc trajectory
 
-# 获取圆弧轨迹的路点
-# 依据 (x-0.12294)^2 + (y-0.54855)^2 + (z-0.26319)^2 = 0.2^2 来计算
+# Get waypoints for the arc trajectory
+# Calculate according to (x-0.12294)^2 + (y-0.54855)^2 + (z-0.26319)^2 = 0.2^2
 def get_circle_waypoint():
     global waypoint1
     global waypoint2
@@ -45,28 +45,28 @@ def get_circle_waypoint():
     x3 = math.sqrt(pow(0.2, 2) - pow(y3 - 0.54855, 2) - pow(z3 - 0.26319, 2))
     waypoint3 = [x3, y3, z3, 3.14, 0.00, 3.14]
 
-# 圆弧运动
+# Arc motion
 def example_movec(robot_name):
     get_circle_waypoint()
     robot_rpc_client.getRobotInterface(robot_name).getMotionControl()\
-        .moveLine(waypoint1, 180 * (M_PI / 180), 1000000 * (M_PI / 180), 0, 0)  # 接口调用: 直线运动
+        .moveLine(waypoint1, 180 * (M_PI / 180), 1000000 * (M_PI / 180), 0, 0)  # API call: Linear motion
     time.sleep(1)
 
     ret = robot_rpc_client.getRobotInterface(robot_name).getMotionControl()\
-        .moveCircle(waypoint2, waypoint3, 180 * (M_PI / 180), 1000000 * (M_PI / 180), 0, 0) # 接口调用: 圆弧运动
+        .moveCircle(waypoint2, waypoint3, 180 * (M_PI / 180), 1000000 * (M_PI / 180), 0, 0) # API call: Arc motion
 
     if ret == 0:
-        print("圆弧运动成功!")
+        print("Arc motion succeeded!")
     else:
-        print("圆弧运动失败！错误码:%d", ret)
+        print("Arc motion failed! Error code:%d", ret)
 
 
 if __name__ == '__main__':
-    robot_rpc_client.connect(robot_ip, robot_port)  # 接口调用: 连接 RPC 服务
+    robot_rpc_client.connect(robot_ip, robot_port)  # API call: Connect to RPC service
     if robot_rpc_client.hasConnected():
         print("Robot rcp_client connected successfully!")
-        robot_rpc_client.login("aubo", "123456")  # 接口调用: 机械臂登录
+        robot_rpc_client.login("aubo", "123456")  # API call: Robot login
         if robot_rpc_client.hasLogined():
             print("Robot rcp_client logined successfully!")
-            robot_name = robot_rpc_client.getRobotNames()[0]  # 接口调用: 获取机器人的名字
-            example_movec(robot_name)  # 圆弧运动
+            robot_name = robot_rpc_client.getRobotNames()[0]  # API call: Get robot name
+            example_movec(robot_name)  # Arc motion

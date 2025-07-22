@@ -14,16 +14,16 @@ using namespace arcs::common_interface;
 #define M_PI 3.14159265358979323846
 #endif
 
-// 实现阻塞功能: 当机械臂运动到目标路点时，程序再往下执行
+// Implements blocking functionality: The program continues only after the robot arm reaches the target waypoint
 int waitArrival(RobotInterfacePtr impl)
 {
     const int max_retry_count = 5;
     int cnt = 0;
 
-    // 接口调用: 获取当前的运动指令 ID
+    // API call: Get the current motion command ID
     int exec_id = impl->getMotionControl()->getExecId();
 
-    // 等待机械臂开始运动
+    // Wait for the robot arm to start moving
     while (exec_id == -1) {
         if (cnt++ > max_retry_count) {
             return -1;
@@ -32,7 +32,7 @@ int waitArrival(RobotInterfacePtr impl)
         exec_id = impl->getMotionControl()->getExecId();
     }
 
-    // 等待机械臂动作完成
+    // Wait for the robot arm to finish moving
     while (impl->getMotionControl()->getExecId() != -1) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
@@ -55,17 +55,17 @@ inline std::ostream &operator<<(std::ostream &os, const std::vector<T> &list)
 class TrajectoryIo
 {
 public:
-    // 构造函数，接受要打开的文件名作为参数
+    // Constructor, accepts the filename to open as a parameter
     TrajectoryIo(const char *filename)
     {
         input_file_.open(filename, std::ios::in);
     }
 
-    // 检查文件是否成功打开
+    // Check if the file was successfully opened
     bool open()
     {
         if (!input_file_.is_open()) {
-            std::cerr << "无法打开轨迹文件. 请检查输入的文件路径是否正确."
+            std::cerr << "Unable to open trajectory file. Please check if the input file path is correct."
                       << std::endl;
             return false;
         }
@@ -73,10 +73,10 @@ public:
     }
     ~TrajectoryIo() { input_file_.close(); }
 
-    // 解析文件中的轨迹数据，
-    // 并将其转换为一个二维的 std::vector。
-    // 它逐行读取文件内容，将每行数据解析为一组 double 数值，
-    // 并将这些数值存储在一个嵌套的二维向量中。
+    // Parse trajectory data from the file,
+    // and convert it to a two-dimensional std::vector.
+    // Reads the file line by line, parses each line into a set of double values,
+    // and stores these values in a nested two-dimensional vector.
     std::vector<std::vector<double>> parse()
     {
         std::vector<std::vector<double>> res;
@@ -96,15 +96,15 @@ public:
         return res;
     }
 
-    // 切割字符串并转换为 double 类型
+    // Split string and convert to double type
     std::vector<double> split(const std::string &str, const char *delim)
     {
         std::vector<double> res;
         if ("" == str) {
             return res;
         }
-        // 先将要切割的字符串从string类型转换为char*类型
-        char *strs = new char[str.length() + 1]; // 不要忘了
+        // First convert the string to char* type
+        char *strs = new char[str.length() + 1]; // Don't forget
         std::strcpy(strs, str.c_str());
 
         char *p = std::strtok(strs, delim);
@@ -116,7 +116,7 @@ public:
                 strs = nullptr;
                 throw p;
             }
-            res.push_back(v); // 存入结果数组
+            res.push_back(v); // Store in result array
             p = std::strtok(nullptr, delim);
         }
 
@@ -129,65 +129,65 @@ public:
     }
 
 private:
-    std::ifstream input_file_; // 输入文件流
+    std::ifstream input_file_; // Input file stream
 };
 
-// 示例1：采用 servoCartesian 跟踪一个轨迹,目标点下发时间间隔 10ms
+// Example 1: Use servoCartesian to track a trajectory, target point interval 10ms
 int exampleServoCartesian1(RpcClientPtr cli)
 {
-    // 读取轨迹文件
+    // Read trajectory file
     auto filename = "../trajs/record6.offt";
     TrajectoryIo input(filename);
 
-    // 尝试打开轨迹文件，如果无法打开，直接返回
+    // Try to open trajectory file, return directly if unable to open
     if (!input.open()) {
         return 0;
     }
 
-    // 解析轨迹数据
+    // Parse trajectory data
     auto traj = input.parse();
 
-    // 检查轨迹文件中是否有路点，
-    // 如果数量为 0，输出错误消息并返回
+    // Check if there are waypoints in the trajectory file,
+    // If the number is 0, output error message and return
     auto traj_sz = traj.size();
     if (traj_sz == 0) {
-        std::cerr << "轨迹文件中的路点数量为0." << std::endl;
+        std::cerr << "Number of waypoints in trajectory file is 0." << std::endl;
         return 0;
     }
-    std::cout << "轨迹文件中的路点数量为: " << traj_sz << std::endl;
+    std::cout << "Number of waypoints in trajectory file: " << traj_sz << std::endl;
 
-    // 接口调用: 获取机器人的名字
+    // API call: Get robot name
     auto robot_name = cli->getRobotNames().front();
     auto robot_interface = cli->getRobotInterface(robot_name);
 
-    // 接口调用: 设置机械臂的速度比率
+    // API call: Set robot arm speed fraction
     robot_interface->getMotionControl()->setSpeedFraction(0.8);
 
-    // 接口调用: 设置 tcp 偏移
+    // API call: Set tcp offset
     std::vector<double> offset = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
     robot_interface->getRobotConfig()->setTcpOffset(offset);
 
-    // 接口调用: 关节运动到轨迹中的第一个点，否则容易引起较大超调
+    // API call: Move joints to the first point in the trajectory to avoid large overshoot
     robot_interface->getMotionControl()->moveJoint(traj[0], 80 * (M_PI / 180),
                                                    60 * (M_PI / 180), 0, 0);
 
-    // 阻塞
+    // Blocking
     int ret = waitArrival(robot_interface);
     if (ret == 0) {
-        std::cout << "关节运动到轨迹文件中的第一个路点成功" << std::endl;
+        std::cout << "Joint moved to the first waypoint in the trajectory file successfully" << std::endl;
     } else {
-        std::cout << "关节运动到轨迹文件中的第一个路点失败" << std::endl;
+        std::cout << "Joint failed to move to the first waypoint in the trajectory file" << std::endl;
     }
 
-    // 接口调用: 开启 servo 模式
+    // API call: Enable servo mode
     robot_interface->getMotionControl()->setServoMode(true);
 
-    // 等待进入 servo 模式
+    // Wait to enter servo mode
     int i = 0;
     while (!robot_interface->getMotionControl()->isServoModeEnabled()) {
         if (i++ > 10) {
             std::cout
-                << "Servo 模式使能失败! 当前的 Servo 模式是 "
+                << "Failed to enable Servo mode! Current Servo mode is "
                 << robot_interface->getMotionControl()->isServoModeEnabled()
                 << std::endl;
             return -1;
@@ -196,30 +196,30 @@ int exampleServoCartesian1(RpcClientPtr cli)
     }
 
     for (size_t i = 1; i < traj.size(); i++) {
-        // 接口调用: 正解
+        // API call: Forward kinematics
         auto fk_result =
             robot_interface->getRobotAlgorithm()->forwardKinematics(traj[i]);
-        // 接口调用: 笛卡尔空间伺服运动
+        // API call: Cartesian servo motion
         robot_interface->getMotionControl()->servoCartesian(
             std::get<0>(fk_result), 0.0, 0.0, 10, 0.0, 0.0);
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
-    // 等待运动结束
+    // Wait for motion to finish
     while (!cli->getRobotInterface(robot_name)->getRobotState()->isSteady()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
-    std::cout << "servoCartesian 运动结束" << std::endl;
+    std::cout << "servoCartesian motion finished" << std::endl;
 
-    // 接口调用: 关闭 servo 模式
+    // API call: Disable servo mode
     cli->getRobotInterface(robot_name)->getMotionControl()->setServoMode(false);
 
-    // 等待结束 servo 模式
+    // Wait to exit servo mode
     while (robot_interface->getMotionControl()->isServoModeEnabled()) {
         if (i++ > 5) {
             std::cout
-                << "Servo 模式失能失败! 当前的 Servo 模式是 "
+                << "Failed to disable Servo mode! Current Servo mode is "
                 << robot_interface->getMotionControl()->isServoModeEnabled()
                 << std::endl;
             return -1;
@@ -230,45 +230,45 @@ int exampleServoCartesian1(RpcClientPtr cli)
     return 0;
 }
 
-// 示例2：通过 servoCartesian 控制机械臂向两个目标点移动
+// Example 2: Use servoCartesian to move the robot arm to two target points
 int exampleServoCartesian2(RpcClientPtr cli)
 {
-    // 接口调用: 获取机器人的名字
+    // API call: Get robot name
     auto robot_name = cli->getRobotNames().front();
     auto robot_interface = cli->getRobotInterface(robot_name);
 
-    // 接口调用: 设置机械臂的速度比率
+    // API call: Set robot arm speed fraction
     robot_interface->getMotionControl()->setSpeedFraction(1);
 
-    // 接口调用: 设置 tcp 偏移
+    // API call: Set tcp offset
     std::vector<double> offset = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
     robot_interface->getRobotConfig()->setTcpOffset(offset);
 
-    // 关节角，单位: 弧度
+    // Joint angles, unit: radians
     std::vector<double> joint_angle = {
         0.0 * (M_PI / 180),  -15.0 * (M_PI / 180), 100.0 * (M_PI / 180),
         25.0 * (M_PI / 180), 90.0 * (M_PI / 180),  0.0 * (M_PI / 180)
     };
 
-    // 接口调用: 关节运动
+    // API call: Joint motion
     robot_interface->getMotionControl()->moveJoint(
         joint_angle, 80 * (M_PI / 180), 60 * (M_PI / 180), 0, 0);
-    // 阻塞
+    // Blocking
     int ret = waitArrival(robot_interface);
     if (ret == 0) {
-        std::cout << "关节运动到初始位置成功" << std::endl;
+        std::cout << "Joint moved to initial position successfully" << std::endl;
     } else {
-        std::cout << "关节运动到初始位置失败" << std::endl;
+        std::cout << "Joint failed to move to initial position" << std::endl;
     }
 
-    // 接口调用: 开启servo模式
+    // API call: Enable servo mode
     robot_interface->getMotionControl()->setServoMode(true);
 
-    // 等待进入 servo 模式
+    // Wait to enter servo mode
     int i = 0;
     while (!robot_interface->getMotionControl()->isServoModeEnabled()) {
         if (i++ > 5) {
-            std::cout << "Servo 模式使能失败! 当前servo状态为 "
+            std::cout << "Failed to enable Servo mode! Current servo status is "
                       << cli->getRobotInterface(robot_name)
                              ->getMotionControl()
                              ->isServoModeEnabled()
@@ -281,13 +281,13 @@ int exampleServoCartesian2(RpcClientPtr cli)
     std::vector<double> q1 = { -120.0 * (M_PI / 180), -15.0 * (M_PI / 180),
                                100.0 * (M_PI / 180),  25.0 * (M_PI / 180),
                                90.0 * (M_PI / 180),   0.0 * (M_PI / 180) };
-    std::cout << "向第一个目标点运动" << std::endl;
+    std::cout << "Moving to the first target point" << std::endl;
 
-    // 接口调用: 正解
+    // API call: Forward kinematics
     auto fk_result1 =
         robot_interface->getRobotAlgorithm()->forwardKinematics(q1);
 
-    // 接口调用: 笛卡尔空间伺服运动
+    // API call: Cartesian servo motion
     robot_interface->getMotionControl()->servoCartesian(std::get<0>(fk_result1),
                                                         0.0, 0.0, 10, 0.0, 0.0);
 
@@ -296,34 +296,34 @@ int exampleServoCartesian2(RpcClientPtr cli)
     std::vector<double> q2 = { 10.0 * (M_PI / 180), -15.0 * (M_PI / 180),
                                90.0 * (M_PI / 180), 25.0 * (M_PI / 180),
                                90.0 * (M_PI / 180), 0.0 * (M_PI / 180) };
-    std::cout << "向第二个目标点运动" << std::endl;
+    std::cout << "Moving to the second target point" << std::endl;
 
-    // 接口调用: 正解
+    // API call: Forward kinematics
     auto fk_result2 =
         robot_interface->getRobotAlgorithm()->forwardKinematics(q2);
 
     std::vector<double> pose2 = std::get<0>(fk_result2);
 
-    // 接口调用: 笛卡尔空间伺服运动
+    // API call: Cartesian servo motion
     robot_interface->getMotionControl()->servoCartesian(std::get<0>(fk_result2),
                                                         0.0, 0.0, 10, 0.0, 0.0);
 
-    // 等待运动结束
+    // Wait for motion to finish
     while (!cli->getRobotInterface(robot_name)->getRobotState()->isSteady()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
 
-    std::cout << "servo cartesian 运动结束" << std::endl;
+    std::cout << "servo cartesian motion finished" << std::endl;
 
-    // 关闭servo模式
+    // Disable servo mode
     robot_interface->getMotionControl()->setServoMode(false);
 
-    // 等待结束 servo 模式
+    // Wait to exit servo mode
     i = 0;
     while (robot_interface->getMotionControl()->isServoModeEnabled()) {
         if (i++ > 5) {
             std::cout
-                << "Servo 模式失能失败! 当前的 Servo 模式是 "
+                << "Failed to disable Servo mode! Current Servo mode is "
                 << robot_interface->getMotionControl()->isServoModeEnabled()
                 << std::endl;
             return -1;
@@ -337,30 +337,30 @@ int exampleServoCartesian2(RpcClientPtr cli)
 #define LOCAL_IP "127.0.0.1"
 
 /**
- * servoCartesian 功能使用步骤:
- * 1、采用实时系统测试 servoCartesian 功能
- * 2、孤立一个 CPU，保证该 CPU 没有其他任务
- * 3、将该进程设置为实时进程，优先级设置为最大
- * 4、绑定 CPU，将该实时进程绑定到第二步孤立的 CPU 上
+ * Steps to use servoCartesian function:
+ * 1. Use a real-time system to test servoCartesian function
+ * 2. Isolate a CPU to ensure no other tasks on that CPU
+ * 3. Set the process as a real-time process with maximum priority
+ * 4. Bind the CPU, bind the real-time process to the CPU isolated in step 2
  */
 int main(void)
 {
 #ifdef WIN32
-    // 将Windows控制台输出代码页设置为 UTF-8
+    // Set Windows console output code page to UTF-8
     SetConsoleOutputCP(CP_UTF8);
 #endif
 #ifndef _WIN32
-    // 实时优先级最大值、最小值
+    // Maximum and minimum real-time priority
     int sched_max = sched_get_priority_max(SCHED_FIFO);
 
-    // 设置实时调度策略及优先级
+    // Set real-time scheduling policy and priority
     struct sched_param sParam;
     sParam.sched_priority = sched_max;
     sched_setscheduler(0, SCHED_FIFO, &sParam);
     auto i_schedFlag = sched_getscheduler(0);
-    printf("设置调度策略 = [%d]\n", i_schedFlag);
+    printf("Set scheduling policy = [%d]\n", i_schedFlag);
 
-    // 绑定CPU
+    // Bind CPU
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
     CPU_SET(1, &cpuset);
@@ -372,23 +372,24 @@ int main(void)
 #endif
 
     auto rpc_cli = std::make_shared<RpcClient>();
-    // 接口调用: 设置 RPC 超时
+    // API call: Set RPC timeout
     rpc_cli->setRequestTimeout(1000);
-    // 接口调用: 连接到 RPC 服务
+    // API call: Connect to RPC service
     rpc_cli->connect(LOCAL_IP, 30004);
-    // 接口调用: 登录
+    // API call: Login
     rpc_cli->login("aubo", "123456");
 
-    //    // 示例1：采用 servoCartesian 跟踪一个轨迹,目标点下发时间间隔 10ms
+    //    // Example 1: Use servoCartesian to track a trajectory, target point interval 10ms
     //    exampleServoCartesian1(rpc_cli);
 
-    // 示例2：通过 servoCartesian 控制机械臂向两个目标点移动
+    // Example 2: Use servoCartesian to move the robot arm to two target points
     exampleServoCartesian2(rpc_cli);
 
-    // 接口调用: RPC 退出登录
+    // API call: RPC logout
     rpc_cli->logout();
-    // 接口调用: RPC 断开连接
+    // API call: RPC disconnect
     rpc_cli->disconnect();
 
     return 0;
 }
+

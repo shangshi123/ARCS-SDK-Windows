@@ -12,24 +12,24 @@ namespace csharp_example
         const int RSERR_SUCC = 0;
 
         static UInt16 rshd = 0xffff;
-        //机械臂IP地址
+        // Robot IP address
         const string robot_ip = "192.168.204.151";
-        //机械臂端口号
+        // Robot port number
         const int server_port = 30004;
-        //M_PI
+        // M_PI
         const double M_PI = 3.14159265358979323846;
 
-        // 实现阻塞功能: 当机械臂运动到目标路点时，程序再往下执行
+        // Blocking function: The program continues when the robot reaches the target waypoint
         static int waitArrival(IntPtr robot_interface)
         {
             const int max_retry_count = 5;
             int cnt = 0;
 
-            // 接口调用: 获取当前的运动指令 ID
+            // API call: Get the current motion command ID
             IntPtr motion_control = cSharpBinging_RobotInterface.robot_getMotionControl(robot_interface);
             int exec_id = cSharpBinging_MotionControl.getExecId(motion_control);
 
-            // 等待机械臂开始运动
+            // Wait for the robot to start moving
             while (exec_id == -1)
             {
                 if (cnt++ > max_retry_count)
@@ -40,7 +40,7 @@ namespace csharp_example
                 exec_id = cSharpBinging_MotionControl.getExecId(motion_control);
             }
 
-            // 等待机械臂动作完成
+            // Wait for the robot to finish moving
             while (cSharpBinging_MotionControl.getExecId(motion_control) != -1)
             {
                 Thread.Sleep(50);
@@ -49,12 +49,12 @@ namespace csharp_example
             return 0;
         }
 
-        // 轨迹数据读取类
+        // Trajectory data reading class
         class TrajectoryIo
         {
             private StreamReader input_file;
 
-            // 构造函数，接受要打开的文件名作为参数
+            // Constructor, accepts the filename to open as a parameter
             public TrajectoryIo(string filename)
             {
                 try
@@ -63,17 +63,17 @@ namespace csharp_example
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"无法打开轨迹文件. 请检查输入的文件路径是否正确. 异常信息: {ex.Message}");
+                    Console.WriteLine($"Unable to open trajectory file. Please check if the input file path is correct. Exception info: {ex.Message}");
                 }
             }
 
-            // 检查文件是否成功打开
+            // Check if the file was successfully opened
             public bool Open()
             {
                 return input_file != null;
             }
 
-            // 解析文件中的轨迹数据，
+            // Parse trajectory data from the file
             public List<List<double>> Parse()
             {
                 List<List<double>> res = new List<List<double>>();
@@ -96,7 +96,7 @@ namespace csharp_example
                 return res;
             }
 
-            // 切割字符串并转换为double类型
+            // Split string and convert to double type
             private List<double> Split(string str, string delim)
             {
                 List<double> res = new List<double>();
@@ -123,31 +123,31 @@ namespace csharp_example
 
         static int exampleTrackJoint(IntPtr cli)
         {
-            // 读取轨迹文件
+            // Read trajectory file
             string filename = "../trajs/record6.offt";
             TrajectoryIo input = new TrajectoryIo(filename);
 
-            // 尝试打开轨迹文件，如果无法打开，直接返回
+            // Try to open trajectory file, return directly if unable to open
             if (!input.Open())
             {
                 return 0;
             }
 
-            // 解析轨迹数据
+            // Parse trajectory data
             List<List<double>> traj = input.Parse();
 
-            // 检查轨迹文件中是否有路点，
+            // Check if there are waypoints in the trajectory file
             if (traj.Count == 0)
             {
-                Console.WriteLine("轨迹文件中的路点数量为0.");
+                Console.WriteLine("Number of waypoints in trajectory file is 0.");
                 return 0;
             }
 
-            // 接口调用: 获取机器人的名字
+            // API call: Get robot names
             IntPtr[] robot_names = new IntPtr[10];
             for (int i = 0; i < 10; i++)
             {
-                robot_names[i] = Marshal.AllocHGlobal(100); // 分配100字节内存用于存放字符串（考虑 '\0' 结尾）
+                robot_names[i] = Marshal.AllocHGlobal(100); // Allocate 100 bytes for string storage (considering '\0' ending)
             }
 
             int num = cSharpBinding_RPC.rpc_getRobotNames(cli, robot_names);
@@ -155,14 +155,14 @@ namespace csharp_example
             {
                 for (int i = 0; i < 10; i++)
                 {
-                    Marshal.FreeHGlobal(robot_names[i]); // 释放分配的内存
+                    Marshal.FreeHGlobal(robot_names[i]); // Free allocated memory
                 }
                 return -1;
             }
             string robot_name = Marshal.PtrToStringAnsi(robot_names[0]);
             for (int i = 0; i < 10; i++)
             {
-                Marshal.FreeHGlobal(robot_names[i]); // 释放分配的内存
+                Marshal.FreeHGlobal(robot_names[i]); // Free allocated memory
             }
             if (robot_name == "")
             {
@@ -171,23 +171,23 @@ namespace csharp_example
 
             IntPtr robot_interface = cSharpBinding_RPC.rpc_getRobotInterface(cli, robot_name);
 
-            // 接口调用: 设置机械臂的速度比率，
+            // API call: Set robot speed fraction
             IntPtr motion_control = cSharpBinging_RobotInterface.robot_getMotionControl(robot_interface);
             cSharpBinging_MotionControl.setSpeedFraction(motion_control, 0.3);
 
-            // 接口调用: 关节运动到轨迹中的第一个点，否则容易引起较大超调
+            // API call: Move joint to the first point in the trajectory to avoid large overshoot
             cSharpBinging_MotionControl.moveJoint(motion_control, traj[0].ToArray(), 80 * (M_PI / 180),
                                                           60 * (M_PI / 180), 0, 0);
 
-            // 阻塞
+            // Blocking
             int ret = waitArrival(robot_interface);
             if (ret == 0)
             {
-                Console.WriteLine("关节运动到轨迹文件中的第一个路点成功");
+                Console.WriteLine("Joint moved to the first waypoint in the trajectory file successfully");
             }
             else
             {
-                Console.WriteLine("关节运动到轨迹文件中的第一个路点失败");
+                Console.WriteLine("Joint failed to move to the first waypoint in the trajectory file");
             }
 
             for (int i = 1; i < traj.Count; i++)
@@ -204,7 +204,7 @@ namespace csharp_example
 
             }
 
-            // 等待运动结束
+            // Wait for motion to finish
             IntPtr robot_state = cSharpBinging_RobotInterface.robot_getRobotState(robot_interface);
             while (!cSharpBinging_RobotState.isSteady(robot_state))
             {
@@ -213,7 +213,7 @@ namespace csharp_example
 
             cSharpBinging_MotionControl.stopJoint(motion_control, 1);
 
-            Console.WriteLine("trackJoint 运动结束");
+            Console.WriteLine("trackJoint motion finished");
 
             return 0;
         }
@@ -222,17 +222,17 @@ namespace csharp_example
         static void Main_TrackJ()
         {
 #if NETCOREAPP
-            // 获取实时优先级最大值
+            // Get maximum real-time priority
             int sched_max = GetMaxPriority(); 
 
-            // 设置实时调度策略及优先级
+            // Set real-time scheduling policy and priority
             SchedParam sParam = new SchedParam();
             sParam.Priority = sched_max;
             SetScheduler(0, SchedType.FIFO, sParam);
             int i_schedFlag = GetScheduler(0);
-            Console.WriteLine($"设置调度策略 = [{i_schedFlag}]");
+            Console.WriteLine($"Set scheduling policy = [{i_schedFlag}]");
 
-            // 绑定CPU
+            // Bind CPU
             CpuSet cpuset = new CpuSet();
             CpuSet.Clear(cpuset);
             CpuSet.Set(1, cpuset);

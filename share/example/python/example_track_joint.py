@@ -2,33 +2,33 @@
 # coding=utf-8
 
 """
-trackJoint 运动
+trackJoint motion
 
-步骤:
-第一步: 连接到 RPC 服务、机械臂登录、设置 RPC 请求超时时间
-第二步: 读取 .offt 轨迹文件
-第三步: 关节运动到轨迹中的第一个点
-第五步: 做 trackJoint 运动
-第六步: 停止 trackJoint 运动
-第七步: 断开 RPC 连接
+Steps:
+Step 1: Connect to RPC service, robot login, set RPC request timeout
+Step 2: Read .offt trajectory file
+Step 3: Move joints to the first point in the trajectory
+Step 5: Perform trackJoint motion
+Step 6: Stop trackJoint motion
+Step 7: Disconnect RPC connection
 """
 import pyaubo_sdk
 import time
 
-robot_ip = "127.0.0.1"  # 服务器 IP 地址
-robot_port = 30004  # 端口号
+robot_ip = "127.0.0.1"  # Server IP address
+robot_port = 30004  # Port number
 M_PI = 3.14159265358979323846
 robot_rpc_client = pyaubo_sdk.RpcClient()
 
-# 阻塞
+# Blocking
 def wait_arrival(robot_interface):
     max_retry_count = 5
     cnt = 0
 
-    # 接口调用: 获取当前的运动指令 ID
+    # API call: Get current motion command ID
     exec_id = robot_interface.getMotionControl().getExecId()
 
-    # 等待机械臂开始运动
+    # Wait for the robot to start moving
     while exec_id == -1:
         if cnt > max_retry_count:
             return -1
@@ -36,17 +36,17 @@ def wait_arrival(robot_interface):
         cnt += 1
         exec_id = robot_interface.getMotionControl().getExecId()
 
-    # 等待机械臂运动完成
+    # Wait for the robot to finish moving
     while robot_interface.getMotionControl().getExecId() != -1:
         time.sleep(0.05)
 
     return 0
 
 def trackJ():
-    robot_name = robot_rpc_client.getRobotNames()[0]  # 接口调用: 获取机器人的名字
+    robot_name = robot_rpc_client.getRobotNames()[0]  # API call: Get robot name
     robot = robot_rpc_client.getRobotInterface(robot_name)
 
-    # 读取轨迹文件并加载轨迹点
+    # Read trajectory file and load trajectory points
     file = open('../c++/trajs/record6.offt')
     traj = []
     for line in file:
@@ -58,19 +58,19 @@ def trackJ():
 
     traj_sz = len(traj)
     if traj_sz == 0:
-        print("没有轨迹点")
+        print("No trajectory points")
     else:
-        print("加载的轨迹点数量为: ", traj_sz)
+        print("Number of loaded trajectory points: ", traj_sz)
 
-    # 关节运动到第一个点
-    # 当前位置要与轨迹中的第一个点一致，否则容易引起较大超调
+    # Move joints to the first point
+    # The current position must be consistent with the first point in the trajectory, otherwise it is easy to cause large overshoot
     print("goto p1")
     mc = robot.getMotionControl()
     mc.setSpeedFraction(0.8)
     mc.moveJoint(traj[0], M_PI, M_PI, 0., 0.)
     wait_arrival(robot)
 
-    # 做 trackJoint 运动
+    # Perform trackJoint motion
     traj.remove(traj[0])
     for q in traj:
         traj_queue_size = mc.getTrajectoryQueueSize()
@@ -80,10 +80,10 @@ def trackJ():
              time.sleep(0.001)
         mc.trackJoint(q, 0.02, 0.5, 1)
 
-    # 停止 trackJoint 运行
+    # Stop trackJoint operation
     mc.stopJoint(1)
 
-    # 等待运动结束
+    # Wait for motion to end
     is_steady = robot.getRobotState().isSteady()
     while is_steady is False:
         is_steady = robot.getRobotState().isSteady()
@@ -94,14 +94,13 @@ def trackJ():
 
 
 if __name__ == '__main__':
-    robot_rpc_client.setRequestTimeout(1000)  # 接口调用: 设置 RPC 请求超时时间
-    robot_rpc_client.connect(robot_ip, robot_port)  # 接口调用: 连接到 RPC 服务
+    robot_rpc_client.setRequestTimeout(1000)  # API call: Set RPC request timeout
+    robot_rpc_client.connect(robot_ip, robot_port)  # API call: Connect to RPC service
     if robot_rpc_client.hasConnected():
         print("Robot rcp_client connected successfully!")
-        robot_rpc_client.login("aubo", "123456")  # 接口调用: 机械臂登录
+        robot_rpc_client.login("aubo", "123456")  # API call: Robot login
         if robot_rpc_client.hasLogined():
             print("Robot rcp_client logined successfully!")
             trackJ()
-            robot_rpc_client.disconnect()  # 接口调用: 断开RPC连接
-
+            robot_rpc_client.disconnect()  # API call: Disconnect RPC connection
 

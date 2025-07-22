@@ -10,14 +10,14 @@ using namespace arcs::aubo_sdk;
 #define M_PI 3.14159265358979323846
 #endif
 
-// 实现阻塞功能: 当机械臂运动到目标路点时，程序再往下执行
+// Implement blocking functionality: The program continues only after the robot arm reaches the target waypoint
 int waitArrival(RobotInterfacePtr impl, int max_retry_count) {
   int cnt = 0;
 
-  // 接口调用: 获取当前的运动指令 ID
+  // API call: Get the current motion command ID
   int exec_id = impl->getMotionControl()->getExecId();
 
-  // 等待机械臂开始运动
+  // Wait for the robot arm to start moving
   while (exec_id == -1) {
     if (cnt++ > max_retry_count) {
       return -1;
@@ -27,7 +27,7 @@ int waitArrival(RobotInterfacePtr impl, int max_retry_count) {
     std::cout << "exec_id: " << exec_id << std::endl;
   }
 
-  // 等待机械臂动作完成
+  // Wait for the robot arm to finish the action
   while (exec_id != -1) {
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
     exec_id = impl->getMotionControl()->getExecId();
@@ -37,18 +37,18 @@ int waitArrival(RobotInterfacePtr impl, int max_retry_count) {
   return 0;
 }
 
-// 等待样条运动完成
+// Wait for spline motion to finish
 void waitMoveSplineFinished(RpcClientPtr impl) {
-  // 接口调用: 获取机器人的名字
+  // API call: Get the robot's name
   auto robot_name = impl->getRobotNames().front();
 
   auto robot_interface = impl->getRobotInterface(robot_name);
 
-  // 等待样条运动开始
+  // Wait for spline motion to start
   while (robot_interface->getMotionControl()->getExecId() == -1) {
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
   }
-  std::cout << "样条运动开始" << std::endl;
+  std::cout << "Spline motion started" << std::endl;
 
   while (1) {
     auto id = robot_interface->getMotionControl()->getExecId();
@@ -59,11 +59,11 @@ void waitMoveSplineFinished(RpcClientPtr impl) {
   }
 }
 
-// 样条运动
+// Spline motion
 void exampleMoveSpline(RpcClientPtr rpc_cli)
 
 {
-  // 路点，用关节角来表示，单位: 弧度
+  // Waypoints, represented by joint angles, unit: radians
   std::vector<double> joint_angle1 = {0.0,
                                       -15.0 * (M_PI / 180),
                                       100.0 * (M_PI / 180),
@@ -87,88 +87,89 @@ void exampleMoveSpline(RpcClientPtr rpc_cli)
       38.20 * (M_PI / 180), -15.73 * (M_PI / 180), 91.05 * (M_PI / 180),
       16.79 * (M_PI / 180), 90.0 * (M_PI / 180),   38.20 * (M_PI / 180)};
 
-  // 接口调用: 获取机器人的名字
+  // API call: Get the robot's name
   auto robot_name = rpc_cli->getRobotNames().front();
 
   auto robot_interface = rpc_cli->getRobotInterface(robot_name);
 
-  // 接口调用: 设置机械臂的速度比率
+  // API call: Set the robot arm's speed ratio
   robot_interface->getMotionControl()->setSpeedFraction(0.8);
 
-  std::cout << "添加第一个路点" << std::endl;
-  // 接口调用: 添加样条运动的第一个路点
+  std::cout << "Add the first waypoint" << std::endl;
+  // API call: Add the first waypoint for spline motion
   rpc_cli->getRobotInterface(robot_name)
       ->getMotionControl()
       ->moveSpline(joint_angle1, 80 * (M_PI / 180), 60 * (M_PI / 180), 0);
 
-  std::cout << "添加第二个路点" << std::endl;
-  // 接口调用: 添加样条运动的第二个路点
+  std::cout << "Add the second waypoint" << std::endl;
+  // API call: Add the second waypoint for spline motion
   rpc_cli->getRobotInterface(robot_name)
       ->getMotionControl()
       ->moveSpline(joint_angle2, 80 * (M_PI / 180), 60 * (M_PI / 180), 0);
 
-  std::cout << "添加第三个路点" << std::endl;
-  // 接口调用: 添加样条运动的第三个路点
+  std::cout << "Add the third waypoint" << std::endl;
+  // API call: Add the third waypoint for spline motion
   rpc_cli->getRobotInterface(robot_name)
       ->getMotionControl()
       ->moveSpline(joint_angle3, 80 * (M_PI / 180), 60 * (M_PI / 180), 0);
 
-  std::cout << "添加第四个路点" << std::endl;
-  // 接口调用: 添加样条运动的第四个路点
+  std::cout << "Add the fourth waypoint" << std::endl;
+  // API call: Add the fourth waypoint for spline motion
   rpc_cli->getRobotInterface(robot_name)
       ->getMotionControl()
       ->moveSpline(joint_angle4, 80 * (M_PI / 180), 180 * (M_PI / 180), 0);
 
-  std::cout << "添加第五个路点" << std::endl;
-  // 接口调用: 添加样条运动的第五个路点
+  std::cout << "Add the fifth waypoint" << std::endl;
+  // API call: Add the fifth waypoint for spline motion
   rpc_cli->getRobotInterface(robot_name)
       ->getMotionControl()
       ->moveSpline(joint_angle5, 80 * (M_PI / 180), 60 * (M_PI / 180), 0);
 
-  // 接口调用: 当关节角参数传入为空时，结束路点添加。
-  // 等待算法计算完成后，机械臂开始执行样条运动。
-  // 所以，当添加的路点数量越多时，由于算法计算的耗时时间长，
-  // 机械臂可能不会立刻运动。
+  // API call: When the joint angle parameter is empty, finish adding waypoints.
+  // After the algorithm calculation is completed, the robot arm starts executing the spline motion.
+  // Therefore, when more waypoints are added, due to the longer algorithm calculation time,
+  // the robot arm may not move immediately.
   rpc_cli->getRobotInterface(robot_name)
       ->getMotionControl()
       ->moveSpline({}, 80 * (M_PI / 180), 60 * (M_PI / 180), 0.005);
 
-  // 等待样条运动完成
+  // Wait for spline motion to finish
   waitMoveSplineFinished(rpc_cli);
 
-  std::cout << "样条运动结束" << std::endl;
+  std::cout << "Spline motion finished" << std::endl;
 }
 
 /**
- * 功能: 机械臂做关节空间的样条运动
- * 步骤:
- * 第一步: 设置 RPC 超时、连接 RPC 服务、机械臂登录
- * 第二步: 设置运动速度比率、以样条运动的方式依次经过5个离散路点
- * 第三步: RPC 退出登录、断开连接
+ * Function: Robot arm performs spline motion in joint space
+ * Steps:
+ * Step 1: Set RPC timeout, connect to RPC service, robot arm login
+ * Step 2: Set motion speed ratio, pass through 5 discrete waypoints using spline motion
+ * Step 3: RPC logout, disconnect
  */
 #define LOCAL_IP "127.0.0.1"
 
 int main(int argc, char **argv) {
 #ifdef WIN32
-  // 将Windows控制台输出代码页设置为 UTF-8
+  // Set Windows console output code page to UTF-8
   SetConsoleOutputCP(CP_UTF8);
 #endif
 
   auto rpc_cli = std::make_shared<RpcClient>();
-  // 接口调用: 设置 RPC 超时
+  // API call: Set RPC timeout
   rpc_cli->setRequestTimeout(1000);
-  // 接口调用: 连接到 RPC 服务
+  // API call: Connect to RPC service
   rpc_cli->connect(LOCAL_IP, 30004);
-  // 接口调用: 登录
+  // API call: Login
   rpc_cli->login("aubo", "123456");
 
-  // 样条运动
+  // Spline motion
   exampleMoveSpline(rpc_cli);
 
-  // 接口调用: 退出登录
+  // API call: Logout
   rpc_cli->logout();
-  // 接口调用: 断开连接
+  // API call: Disconnect
   rpc_cli->disconnect();
 
   return 0;
 }
+

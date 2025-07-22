@@ -12,25 +12,25 @@ namespace csharp_example
         const int RSERR_SUCC = 0;
 
         static UInt16 rshd = 0xffff;
-        //机械臂IP地址
+        // Robot IP address
         const string robotIP = "192.168.204.151";
-        //机械臂端口号
+        // Robot port number
         const int serverPort = 30004;
-        //M_PI
+        // M_PI
         const double M_PI = 3.14159265358979323846;
 
 
-        // 实现阻塞功能: 当机械臂运动到目标路点时，程序再往下执行
+        // Blocking function: When the robot moves to the target waypoint, the program continues execution
         static int waitArrival(IntPtr robot_interface)
         {
             const int max_retry_count = 5;
             int cnt = 0;
 
-            // 接口调用: 获取当前的运动指令 ID
+            // API call: Get current motion command ID
             IntPtr motion_control = cSharpBinging_RobotInterface.robot_getMotionControl(robot_interface);
             int exec_id =  cSharpBinging_MotionControl.getExecId(motion_control);
  
-            // 等待机械臂开始运动
+            // Wait for the robot to start moving
             while (exec_id == -1)
             {
                 if (cnt++ > max_retry_count)
@@ -41,7 +41,7 @@ namespace csharp_example
                 exec_id = cSharpBinging_MotionControl.getExecId(motion_control);
             }
 
-            // 等待机械臂动作完成
+            // Wait for the robot action to complete
             while (cSharpBinging_MotionControl.getExecId(motion_control) != -1)
             {
                 Thread.Sleep(50);
@@ -72,11 +72,11 @@ namespace csharp_example
                 16.44 * (M_PI / 180), 90.0 * (M_PI / 180), 11.64 * (M_PI / 180)
             };
 
-                // 接口调用: 获取机器人的名字
+                // API call: Get the robot's name
                 IntPtr[] robot_names = new IntPtr[10];
                 for (int i = 0; i < 10; i++)
                 {
-                    robot_names[i] = Marshal.AllocHGlobal(100); // 分配100字节内存用于存放字符串（考虑 '\0' 结尾）
+                    robot_names[i] = Marshal.AllocHGlobal(100); // Allocate 100 bytes of memory for storing strings (considering '\0' ending)
                 }
 
                 int num = cSharpBinding_RPC.rpc_getRobotNames(cli, robot_names);
@@ -84,14 +84,14 @@ namespace csharp_example
                 {
                     for (int i = 0; i < 10; i++)
                     {
-                        Marshal.FreeHGlobal(robot_names[i]); // 释放分配的内存
+                        Marshal.FreeHGlobal(robot_names[i]); // Release allocated memory
                     }
                     return -1;
                 }
                 string robot_name = Marshal.PtrToStringAnsi(robot_names[0]);
                 for (int i = 0; i < 10; i++)
                 {
-                    Marshal.FreeHGlobal(robot_names[i]); // 释放分配的内存
+                    Marshal.FreeHGlobal(robot_names[i]); // Release allocated memory
                 }
                 if (robot_name == "")
                 {
@@ -100,49 +100,49 @@ namespace csharp_example
 
                 IntPtr robot_interface = cSharpBinding_RPC.rpc_getRobotInterface(cli, robot_name);
 
-                // 接口调用: 设置机械臂的速度比率，
+                // API call: Set the robot's speed ratio
             IntPtr motion_control = cSharpBinging_RobotInterface.robot_getMotionControl(robot_interface);
             cSharpBinging_MotionControl.setSpeedFraction(motion_control, 0.3);
 
-                // 接口调用: 关节运动
+                // API call: Joint movement
             cSharpBinging_MotionControl.moveJoint(motion_control, joint_angle1.ToArray(), 80 * (M_PI / 180), 60 * (M_PI / 180), 0, 0);
-                // 阻塞
+                // Blocking
                 int ret = waitArrival(robot_interface);
                 if (ret == 0)
                 {
-                    Console.WriteLine("关节运动到路点1成功");
+                    Console.WriteLine("Joint movement to waypoint 1 succeeded");
                 }
                 else
                 {
-                    Console.WriteLine("关节运动到路点1失败");
+                    Console.WriteLine("Joint movement to waypoint 1 failed");
                 }
 
-            // 接口调用: 关节运动
+            // API call: Joint movement
             cSharpBinging_MotionControl.moveJoint(motion_control, joint_angle2.ToArray(), 80 * (M_PI / 180), 60 * (M_PI / 180), 0, 0);
 
-            // 阻塞
+            // Blocking
             ret = waitArrival(robot_interface);
                 if (ret == 0)
                 {
-                    Console.WriteLine("关节运动到路点2成功");
+                    Console.WriteLine("Joint movement to waypoint 2 succeeded");
                 }
                 else
                 {
-                    Console.WriteLine("关节运动到路点2失败");
+                    Console.WriteLine("Joint movement to waypoint 2 failed");
                 }
 
-            // 接口调用: 关节运动
+            // API call: Joint movement
             cSharpBinging_MotionControl.moveJoint(motion_control, joint_angle3.ToArray(), 80 * (M_PI / 180), 60 * (M_PI / 180), 0, 0);
 
-            // 阻塞
+            // Blocking
             ret = waitArrival(robot_interface);
                 if (ret == 0)
                 {
-                    Console.WriteLine("关节运动到路点3成功");
+                    Console.WriteLine("Joint movement to waypoint 3 succeeded");
                 }
                 else
                 {
-                    Console.WriteLine("关节运动到路点3失败");
+                    Console.WriteLine("Joint movement to waypoint 3 failed");
                 }
                 return 0;
 
@@ -151,7 +151,7 @@ namespace csharp_example
         static void Main_MoveJ(string[] args)
         {
             cSharpBinding_RPC csharpbingding_rpc = new cSharpBinding_RPC();
-            //初始化机械臂控制库
+            // Initialize robot control library
             IntPtr rpc_client = cSharpBinding_RPC.rpc_create_client(0);
             Console.Out.WriteLine("rpc_create_client ret={0}", rpc_client);
             if (rpc_client == IntPtr.Zero)
@@ -170,3 +170,4 @@ namespace csharp_example
         }
     }
 }
+

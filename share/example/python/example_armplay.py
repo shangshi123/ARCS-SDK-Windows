@@ -2,20 +2,20 @@
 # coding=utf-8
 
 """
-PathBuffer 运动
+PathBuffer Motion
 
-步骤:
-第一步: 连接到 RPC 服务、机械臂登录、设置RPC请求超时时间
-第二步: 读取 JSON 文件
-第三步: 关节运动到JSON文件中的第一个路点
-第四步: 释放路径缓存
-第五步: 新建一个路径点缓存 “rec”
-第六步: 将 JSON 文件中的路点添加到 “rec” 缓存中
-第七步: 计算、优化等耗时操作，传入的参数相同时不会重新计算
-第八步: 判断"rec"这个buffer是否有效，
-    有效则执行下一步；反之，则一直阻塞
-第九步: 执行缓存的路径
-第十步: 断开RPC连接
+Steps:
+Step 1: Connect to RPC service, robot login, set RPC request timeout
+Step 2: Read JSON file
+Step 3: Joint motion to the first waypoint in the JSON file
+Step 4: Release path buffer
+Step 5: Create a new path point buffer "rec"
+Step 6: Add waypoints from the JSON file to the "rec" buffer
+Step 7: Time-consuming operations such as calculation and optimization; will not recalculate if parameters are unchanged
+Step 8: Check if the "rec" buffer is valid,
+    If valid, proceed to the next step; otherwise, keep blocking
+Step 9: Execute the buffered path
+Step 10: Disconnect RPC connection
 
 """
 
@@ -24,13 +24,13 @@ import time
 import json
 import sys
 
-robot_ip = "127.0.0.1"  # 服务器 IP 地址
-robot_port = 30004  # 端口号
+robot_ip = "127.0.0.1"  # Server IP address
+robot_port = 30004  # Port number
 M_PI = 3.14159265358979323846
 robot_rpc_client = pyaubo_sdk.RpcClient()
 
 
-# 阻塞
+# Blocking
 def waitArrival(impl):
     cnt = 0
     while impl.getMotionControl().getExecId() == -1:
@@ -47,7 +47,7 @@ def waitArrival(impl):
             break
         time.sleep(0.05)
 
-# 等待 MovePathBuffer 完成
+# Wait for MovePathBuffer to finish
 def waitMovePathBufferFinished(impl):
     while impl.getMotionControl().getExecId() == -1:
         time.sleep(0.05)
@@ -59,34 +59,34 @@ def waitMovePathBufferFinished(impl):
 
 
 if __name__ == '__main__':
-    robot_rpc_client.setRequestTimeout(1000)  # 接口调用: 设置 RPC 超时
-    robot_rpc_client.connect(robot_ip, robot_port)  # 接口调用: 连接到 RPC 服务
+    robot_rpc_client.setRequestTimeout(1000)  # API call: Set RPC timeout
+    robot_rpc_client.connect(robot_ip, robot_port)  # API call: Connect to RPC service
     if robot_rpc_client.hasConnected():
         print("Robot rcp_client connected successfully!")
-        robot_rpc_client.login("aubo", "123456")  # 接口调用: 机械臂登录
+        robot_rpc_client.login("aubo", "123456")  # API call: Robot login
         if robot_rpc_client.hasLogined():
             print("Robot rcp_client logined successfully!")
 
-            robot_rpc_client.setRequestTimeout(40)  # 接口调用: 设置RPC请求超时时间
+            robot_rpc_client.setRequestTimeout(40)  # API call: Set RPC request timeout
 
-            # 读取 JSON 文件
+            # Read JSON file
             f = open('../c++/trajs/aubo-joint-test-0929-10.armplay')
             input = json.load(f)
             traj = input['jointlist']
             interval = input['interval']
-            print("采样时间间隔: ", interval)
+            print("Sampling time interval: ", interval)
 
             traj_sz = len(traj)
             if traj_sz == 0:
-                print("没有路点")
+                print("No waypoints")
                 sys.exit()
             else:
-                print("加载点的数量: ", len(traj))
+                print("Number of loaded points: ", len(traj))
 
-            robot_name = robot_rpc_client.getRobotNames()[0]  # 接口调用: 获取机器人的名字
+            robot_name = robot_rpc_client.getRobotNames()[0]  # API call: Get robot name
             mc = robot_rpc_client.getRobotInterface(robot_name).getMotionControl()
 
-            # 关节运动
+            # Joint motion
             q1 = traj[0]
             print("q1: ", q1)
             print("goto p1")
@@ -94,17 +94,17 @@ if __name__ == '__main__':
             waitArrival(robot_rpc_client.getRobotInterface(robot_name))
 
             print("pathBufferAlloc")
-            mc.pathBufferFree("rec")  # 接口调用: 释放路径缓存
-            mc.pathBufferAlloc("rec", 2, traj_sz)  # 接口调用: 新建一个路径点缓存
+            mc.pathBufferFree("rec")  # API call: Release path buffer
+            mc.pathBufferAlloc("rec", 2, traj_sz)  # API call: Create a new path point buffer
 
-            # 将 traj 中的路点添加到 “rec” 缓存中
-            # 以每10个路点为一个列表来添加
-            # 当未添加的路点数量小于或者等于10时，则作为最后一组列表来添加
+            # Add waypoints from traj to "rec" buffer
+            # Add every 10 waypoints as a list
+            # When the number of remaining waypoints is less than or equal to 10, add them as the last group
             offset = 10
             it = 0
             while True:
                 print("pathBufferAppend ", offset)
-                mc.pathBufferAppend("rec", traj[it:it + 10:1])  # 接口调用: 向路径缓存添加路点
+                mc.pathBufferAppend("rec", traj[it:it + 10:1])  # API call: Add waypoints to path buffer
                 it += 10
                 if offset + 10 >= traj_sz:
                     print("pathBufferAppend ", traj_sz)
@@ -112,12 +112,12 @@ if __name__ == '__main__':
                     break
                 offset += 10
 
-            print("pathBufferEval ", mc.pathBufferEval("rec", [], [], interval))  # 接口调用: 计算、优化等耗时操作，传入的参数相同时不会重新计算
+            print("pathBufferEval ", mc.pathBufferEval("rec", [], [], interval))  # API call: Calculation, optimization, etc.; will not recalculate if parameters are unchanged
             while not mc.pathBufferValid("rec"):
-                print("pathBufferValid: ", mc.pathBufferValid("rec"))  # 接口调用: 指定名字的buffer是否有效
+                print("pathBufferValid: ", mc.pathBufferValid("rec"))  # API call: Check if buffer with specified name is valid
                 time.sleep(0.0005)
-            mc.movePathBuffer("rec")  # 接口调用: 执行缓存的路径
+            mc.movePathBuffer("rec")  # API call: Execute buffered path
             waitMovePathBufferFinished(robot_rpc_client.getRobotInterface(robot_name))
             print("end movePathBuffer")
-            robot_rpc_client.disconnect()  # 接口调用: 断开RPC连接
+            robot_rpc_client.disconnect()  # API call: Disconnect RPC connection
 

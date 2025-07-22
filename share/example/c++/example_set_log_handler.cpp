@@ -6,7 +6,7 @@ using namespace arcs::aubo_sdk;
 #define LOCAL_IP "127.0.0.1"
 
 void example_read_log(RpcClientPtr cli) {
-  // 接口调用: 重新日志系统的格式
+  // API call: Reset the format of the log system
   cli->setLogHandler([](int level, const char *filename, int line,
                         const std::string &message) {
     std::cout << "level: " << level << std::endl;
@@ -16,29 +16,29 @@ void example_read_log(RpcClientPtr cli) {
   });
 }
 /**
- * 功能: 自定义日志的格式
- * 步骤:
- * 第一步: 自定义日志的格式。
- * 注意: 要在连接服务器之前，调用 setLogHandler
- * 函数。否则，自定义的日志格式不会生效。
- * 第二步: 连接 RPC 服务、机械臂登录
- * 第三步: 退出登录、断开 RPC 服务
+ * Function: Customize the format of the log
+ * Steps:
+ * Step 1: Customize the format of the log.
+ * Note: Call the setLogHandler function before connecting to the server.
+ * Otherwise, the customized log format will not take effect.
+ * Step 2: Connect to the RPC service and log in to the robot arm
+ * Step 3: Log out and disconnect from the RPC service
  */
 int main() {
-  // RPC 客户端对象
+  // RPC client object
   auto rpc_cli = std::make_shared<RpcClient>();
-  // 自定义日志的格式
+  // Customize the format of the log
   example_read_log(rpc_cli);
-  // 接口调用: 设置 RPC 超时
+  // API call: Set RPC timeout
   rpc_cli->setRequestTimeout(1000);
-  // 接口调用: 连接到 RPC 服务
+  // API call: Connect to the RPC service
   rpc_cli->connect(LOCAL_IP, 30004);
-  // 接口调用: 登录
+  // API call: Log in
   rpc_cli->login("aubo", "123456");
 
-  // 接口调用: 退出登录
+  // API call: Log out
   rpc_cli->logout();
-  // 接口调用: 断开连接
+  // API call: Disconnect
   rpc_cli->disconnect();
   return 0;
 }

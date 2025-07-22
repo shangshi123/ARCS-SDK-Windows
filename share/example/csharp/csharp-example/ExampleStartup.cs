@@ -11,21 +11,21 @@ namespace csharp_example
         const int RSERR_SUCC = 0;
 
         static UInt16 rshd = 0xffff;
-        //机械臂IP地址
+        // Robot IP address
         const string robot_ip = "192.168.204.151";
-        //机械臂端口号
+        // Robot port number
         const int server_port = 30004;
 
 
-        // 等待机械臂进入目标模式
+        // Wait for the robot to enter the target mode
         static void WaitForRobotMode(IntPtr robot_state, cSharpBinging_TypeDef.RobotModeType target_mode)
         {
-            // 接口调用: 获取当前机械臂的模式
+            // API call: Get the current mode of the robot
             cSharpBinging_TypeDef.RobotModeType current_mode = cSharpBinging_RobotState.getRobotModeType(robot_state);
 
             while (current_mode != target_mode)
             {
-                Console.WriteLine($"机械臂当前模式: {current_mode}");
+                Console.WriteLine($"Current robot mode: {current_mode}");
                 Thread.Sleep(1000);
                 current_mode = cSharpBinging_RobotState.getRobotModeType(robot_state);
             }
@@ -36,7 +36,7 @@ namespace csharp_example
             IntPtr[] robot_names = new IntPtr[10];
             for (int i = 0; i < 10; i++)
             {
-                robot_names[i] = Marshal.AllocHGlobal(100); // 分配100字节内存用于存放字符串（考虑 '\0' 结尾）
+                robot_names[i] = Marshal.AllocHGlobal(100); // Allocate 100 bytes of memory for storing strings (considering '\0' ending)
             }
 
             int num = cSharpBinding_RPC.rpc_getRobotNames(cli, robot_names);
@@ -44,14 +44,14 @@ namespace csharp_example
             {
                 for (int i = 0; i < 10; i++)
                 {
-                    Marshal.FreeHGlobal(robot_names[i]); // 释放分配的内存
+                    Marshal.FreeHGlobal(robot_names[i]); // Release allocated memory
                 }
                 return -1;
             }
             string robot_name = Marshal.PtrToStringAnsi(robot_names[0]);
             for (int i = 0; i < 10; i++)
             {
-                Marshal.FreeHGlobal(robot_names[i]); // 释放分配的内存
+                Marshal.FreeHGlobal(robot_names[i]); // Release allocated memory
             }
             if (robot_name == "") {
                 return -1;
@@ -59,45 +59,45 @@ namespace csharp_example
 
             IntPtr robot_interface = cSharpBinding_RPC.rpc_getRobotInterface(cli, robot_name);
 
-            // 接口调用: 设置负载
-            double mass = 0.0; // 示例质量值
-            double[] cog =  { 0.0, 0.0, 0.0 }; // 示例重心坐标
-            double[] aom =  { 0.0, 0.0, 0.0 }; // 示例附加质量矩
-            double[] inertia = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }; // 示例惯性张量
+            // API call: Set payload
+            double mass = 0.0; // Example mass value
+            double[] cog =  { 0.0, 0.0, 0.0 }; // Example center of gravity coordinates
+            double[] aom =  { 0.0, 0.0, 0.0 }; // Example additional mass moment
+            double[] inertia = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }; // Example inertia tensor
 
             IntPtr robot_config = cSharpBinging_RobotInterface.robot_getRobotConfig(robot_interface);
 
            cSharpBinging_RobotConfig.setPayload(robot_config, mass, cog, aom, inertia);
 
             IntPtr robot_state = cSharpBinging_RobotInterface.robot_getRobotState(robot_interface);
-            // 接口调用: 获取机械臂当前模式
+            // API call: Get the current mode of the robot
             cSharpBinging_TypeDef.RobotModeType robot_mode = cSharpBinging_RobotState.getRobotModeType(robot_state);
 
             if (robot_mode == cSharpBinging_TypeDef.RobotModeType.Running)
             {
-                Console.WriteLine("机械臂已松刹车，处于运行模式");
+                Console.WriteLine("Robot brake released, in running mode");
                 return -1;
             }
 
             IntPtr robot_manage = cSharpBinging_RobotInterface.robot_getRobotManage(robot_interface);
-            // 接口调用: 机械臂发起上电请求
+            // API call: Robot initiates power-on request
             cSharpBinging_RobotManage.poweron(robot_manage);
 
            
-            // 等待机械臂进入空闲模式
+            // Wait for the robot to enter idle mode
             WaitForRobotMode(robot_state, cSharpBinging_TypeDef.RobotModeType.Idle);
 
             robot_mode = cSharpBinging_RobotState.getRobotModeType(robot_state);
-            Console.WriteLine($"机械臂上电成功，当前模式:{0}", robot_mode);
+            Console.WriteLine($"Robot powered on successfully, current mode:{0}", robot_mode);
 
-            // 接口调用: 机械臂发起松刹车请求
+            // API call: Robot initiates brake release request
             cSharpBinging_RobotManage.startup(robot_manage);
 
-            // 等待机械臂进入运行模式
+            // Wait for the robot to enter running mode
             WaitForRobotMode(robot_state, cSharpBinging_TypeDef.RobotModeType.Running);
 
             robot_mode = cSharpBinging_RobotState.getRobotModeType(robot_state);
-            Console.WriteLine($"机械臂松刹车成功，当前模式: {0}", robot_mode);
+            Console.WriteLine($"Robot brake released successfully, current mode: {0}", robot_mode);
 
             return 0;
         }
@@ -105,7 +105,7 @@ namespace csharp_example
         static void Main(string[] args)
         {
             cSharpBinding_RPC csharpbingding_rpc = new cSharpBinding_RPC();
-            //初始化机械臂控制库
+            // Initialize robot control library
             IntPtr rpc_client = cSharpBinding_RPC.rpc_create_client(0);
             Console.Out.WriteLine("rpc_create_client ret={0}", rpc_client);
             if (rpc_client == IntPtr.Zero)
@@ -125,3 +125,4 @@ namespace csharp_example
 
     }
 }
+

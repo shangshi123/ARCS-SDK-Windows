@@ -17,15 +17,15 @@ using namespace arcs::common_interface;
 
 class TrajectoryIo {
 public:
-  // 构造函数，接受要打开的文件名作为参数
+  // Constructor, takes the filename to open as a parameter
   TrajectoryIo(const char *filename) {
     input_file_.open(filename, std::ios::in);
   }
 
-  // 检查文件是否成功打开
+  // Check if the file was opened successfully
   bool open() {
     if (!input_file_.is_open()) {
-      std::cerr << "无法打开轨迹文件. 请检查输入的文件路径是否正确."
+      std::cerr << "Unable to open trajectory file. Please check if the input file path is correct."
                 << std::endl;
       return false;
     }
@@ -33,10 +33,10 @@ public:
   }
   ~TrajectoryIo() { input_file_.close(); }
 
-  // 解析文件中的轨迹数据，
-  // 并将其转换为一个二维的 std::vector。
-  // 它逐行读取文件内容，将每行数据解析为一组 double 数值，
-  // 并将这些数值存储在一个嵌套的二维向量中。
+  // Parse trajectory data from the file,
+  // and convert it to a 2D std::vector.
+  // Reads the file line by line, parses each line into a group of double values,
+  // and stores these values in a nested 2D vector.
   std::vector<std::vector<double>> parse() {
     std::vector<std::vector<double>> res;
     std::string tmp;
@@ -55,14 +55,14 @@ public:
     return res;
   }
 
-  // 切割字符串并转换为 double 类型
+  // Split string and convert to double type
   std::vector<double> split(const std::string &str, const char *delim) {
     std::vector<double> res;
     if ("" == str) {
       return res;
     }
-    // 先将要切割的字符串从string类型转换为char*类型
-    char *strs = new char[str.length() + 1]; // 不要忘了
+    // First convert the string to char* type
+    char *strs = new char[str.length() + 1]; // Don't forget
     std::strcpy(strs, str.c_str());
 
     char *p = std::strtok(strs, delim);
@@ -74,7 +74,7 @@ public:
         strs = nullptr;
         throw p;
       }
-      res.push_back(v); // 存入结果数组
+      res.push_back(v); // Store in result array
       p = std::strtok(nullptr, delim);
     }
 
@@ -87,19 +87,19 @@ public:
   }
 
 private:
-  std::ifstream input_file_; // 输入文件流
+  std::ifstream input_file_; // Input file stream
 };
 
-// 实现阻塞功能: 当机械臂运动到目标路点时，程序再往下执行
+// Implement blocking: the program continues only when the robot arm reaches the target waypoint
 int waitArrival(RobotInterfacePtr impl) {
-  // 接口调用: 获取当前的运动指令 ID
+  // Get the current motion command ID
   int exec_id = impl->getMotionControl()->getExecId();
 
   int cnt = 0;
-  // 在等待机械臂开始运动时，获取exec_id最大的重试次数
+  // Maximum retry count for waiting for the robot arm to start moving
   int max_retry_count = 50;
 
-  // 等待机械臂开始运动
+  // Wait for the robot arm to start moving
   while (exec_id == -1) {
     if (cnt++ > max_retry_count) {
       return -1;
@@ -108,7 +108,7 @@ int waitArrival(RobotInterfacePtr impl) {
     exec_id = impl->getMotionControl()->getExecId();
   }
 
-  // 等待机械臂动作完成
+  // Wait for the robot arm to finish moving
   while (exec_id != -1) {
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
     exec_id = impl->getMotionControl()->getExecId();
@@ -117,11 +117,11 @@ int waitArrival(RobotInterfacePtr impl) {
   return 0;
 }
 
-// 判断缓存是否有效
+// Check if buffer is valid
 int isBufferValid(RobotInterfacePtr impl) {
-  // 调用pathBufferValid最大的重试次数
+  // Maximum retry count for calling pathBufferValid
   int max_retry_count = 5;
-  // 调用pathBufferValid的次数
+  // Number of times pathBufferValid is called
   int cnt = 0;
   bool isValid = impl->getMotionControl()->pathBufferValid("rec");
 
@@ -140,7 +140,7 @@ int isBufferValid(RobotInterfacePtr impl) {
 auto rpc_cli = std::make_shared<RpcClient>();
 int task_id;
 
-// 定义信号处理函数
+// Define signal handler function
 void signalHandler(int signal) {
   if (signal == SIGINT) {
     std::cout << "Received SIGINT signal." << std::endl;
@@ -150,58 +150,58 @@ void signalHandler(int signal) {
       rpc_cli->logout();
       rpc_cli->disconnect();
     }
-    // 退出程序
+    // Exit program
     exit(0);
   }
 }
 
 int main(int argc, char **argv) {
 #ifdef WIN32
-  // 将Windows控制台输出代码页设置为 UTF-8
+  // Set Windows console output code page to UTF-8
   SetConsoleOutputCP(CP_UTF8);
 #endif
-  // 注册信号处理函数
+  // Register signal handler function
   signal(SIGINT, signalHandler);
 
-  // 读取轨迹文件
+  // Read trajectory file
   //
-  // CoffeCappuccino-heart-R_filtered.csv文件中的路点是TCP相对于用户坐标系下的
+  // The waypoints in CoffeCappuccino-heart-R_filtered.csv are TCP relative to the user coordinate system
   //    auto filename = "../trajs/CoffeCappuccino-heart-R_filtered.csv";
   auto filename = "../trajs/CoffeCappuccino-heart-L_filtered.csv";
   TrajectoryIo input(filename);
 
-  // 尝试打开轨迹文件，如果无法打开，直接返回
+  // Try to open trajectory file, return directly if unable to open
   if (!input.open()) {
     return 0;
   }
 
-  // 解析轨迹数据
+  // Parse trajectory data
   auto traj = input.parse();
 
-  // 检查轨迹文件中是否有路点，
-  // 如果数量为 0，输出错误消息并返回
+  // Check if there are waypoints in the trajectory file,
+  // If the number is 0, output an error message and return
   auto traj_sz = traj.size();
   if (traj_sz == 0) {
-    std::cerr << "轨迹文件中的路点数量为0." << std::endl;
+    std::cerr << "The number of waypoints in the trajectory file is 0." << std::endl;
     return 0;
   }
 
-  // 接口调用: 设置 RPC 超时
+  // API call: Set RPC timeout
   rpc_cli->setRequestTimeout(10000);
-  // 接口调用: 连接到 RPC 服务
+  // API call: Connect to RPC service
   rpc_cli->connect(LOCAL_IP, 30004);
-  // 接口调用: 登录
+  // API call: Login
   rpc_cli->login("aubo", "123456");
 
-  // 接口调用: 获取机器人的名字
+  // API call: Get the robot's name
   auto robot_name = rpc_cli->getRobotNames().front();
 
   auto robot_interface = rpc_cli->getRobotInterface(robot_name);
 
-  // 接口调用: 设置机械臂的速度比率
+  // API call: Set the speed ratio of the robot arm
   robot_interface->getMotionControl()->setSpeedFraction(1);
 
-  // TCP相对于法兰盘中心的偏移位姿
+  // TCP offset pose relative to the center of the flange
   std::vector<double> tcp_offset(6);
   tcp_offset[0] = -0.093;
   tcp_offset[1] = 0.0007249;
@@ -217,10 +217,10 @@ int main(int argc, char **argv) {
   //    tcp_offset[4] = 0.0;
   //    tcp_offset[5] = 0.0;
 
-  // 接口调用: 设置TCP相对于法兰盘中心的偏移
+  // API call: Set the TCP offset relative to the center of the flange
   robot_interface->getRobotConfig()->setTcpOffset(tcp_offset);
 
-  // 三个标定点的位姿
+  // The poses of three calibration points
   std::vector<double> coord_q0(6), coord_q1(6), coord_q2(6);
   coord_q0[0] = -1.627214;
   coord_q0[1] = -0.360182;
@@ -243,7 +243,7 @@ int main(int argc, char **argv) {
   coord_q2[4] = -0.720357;
   coord_q2[5] = -1.430912;
 
-  // 接口调用: 正解求出标定点的关节角
+  // API call: Use forward kinematics to get the joint angles of the calibration points
   auto [coord_p0, ret0] =
       robot_interface->getRobotAlgorithm()->forwardKinematics(coord_q0);
   auto [coord_p1, ret1] =
@@ -251,23 +251,23 @@ int main(int argc, char **argv) {
   auto [coord_p2, ret2] =
       robot_interface->getRobotAlgorithm()->forwardKinematics(coord_q2);
 
-  // 接口调用: 用户坐标系标定
+  // API call: User coordinate system calibration
   auto [coord, ret3] = rpc_cli->getMath()->calibrateCoordinate(
       {coord_p0, coord_p1, coord_p2}, 0);
 
-  // 创建了一个名为 traj_q 的变量，
-  // 其类型与表达式 traj 的类型相同
+  // Create a variable named traj_q,
+  // Its type is the same as the expression traj
   decltype(traj) traj_q;
 
-  // 接口调用: 开启规划器运行
+  // API call: Start the planner
   rpc_cli->getRuntimeMachine()->start();
   auto cur_plan_context = rpc_cli->getRuntimeMachine()->getPlanContext();
-  // 接口调用: 获取新的线程id
+  // API call: Get a new thread id
   task_id = rpc_cli->getRuntimeMachine()->newTask();
   rpc_cli->getRuntimeMachine()->setPlanContext(
       task_id, std::get<1>(cur_plan_context), std::get<2>(cur_plan_context));
 
-  // 接口调用: 关节运动到原点
+  // API call: Move joints to the origin
   auto home_q = {0.0,
                  -15.0 / 180 * M_PI,
                  100.0 / 180 * M_PI,
@@ -276,62 +276,62 @@ int main(int argc, char **argv) {
                  0.0};
   robot_interface->getMotionControl()->moveJoint(home_q, 30 * (M_PI / 180),
                                                  30 * (M_PI / 180), 0., 0.);
-  // 阻塞
+  // Blocking
   int ret = waitArrival(robot_interface);
   if (ret == 0) {
-    std::cout << "关节运动到原点成功" << std::endl;
+    std::cout << "Joint movement to origin succeeded" << std::endl;
   } else {
-    std::cout << "关节运动到原点失败" << std::endl;
+    std::cout << "Joint movement to origin failed" << std::endl;
   }
 
-  // 接口调用: 获取当前的关节角，
-  // 作为代码后面的逆解的参考关节角
+  // API call: Get the current joint angles,
+  // As the reference joint angles for the inverse kinematics later in the code
   auto current_q = robot_interface->getRobotState()->getJointPositions();
 
-  // 将轨迹文件中TCP在用户坐标系下的路点位姿转化成TCP在基坐标系下的路点位姿，
-  // 再逆解求出关节角，
-  // 并将路点的关节角保存在变量traj_q中
+  // Convert the TCP waypoint poses in the user coordinate system from the trajectory file to the TCP waypoint poses in the base coordinate system,
+  // Then use inverse kinematics to get the joint angles,
+  // And save the joint angles of the waypoints in the variable traj_q
   for (const auto &p : traj) {
-    // 接口调用: 获得 TCP 在基坐标系下的位姿
+    // API call: Get the TCP pose in the base coordinate system
     auto rp = rpc_cli->getMath()->poseTrans(coord, p);
-    // 接口调用: 逆解获得关节角
+    // API call: Use inverse kinematics to get joint angles
     auto [q, ret] =
         robot_interface->getRobotAlgorithm()->inverseKinematics(current_q, rp);
     current_q = q;
     traj_q.push_back(q);
   }
 
-  // 接口调用: 关节运动到轨迹文件中的第一个路点
+  // API call: Move joints to the first waypoint in the trajectory file
   robot_interface->getMotionControl()->moveJoint(traj_q[0], 30 * (M_PI / 180),
                                                  30 * (M_PI / 180), 0., 0.);
-  // 阻塞
+  // Blocking
   ret = waitArrival(robot_interface);
   if (ret == 0) {
-    std::cout << "关节运动到轨迹文件中的第一个路点成功" << std::endl;
+    std::cout << "Joint movement to the first waypoint in the trajectory file succeeded" << std::endl;
   } else {
-    std::cout << "关节运动到轨迹文件中的第一个路点失败" << std::endl;
+    std::cout << "Joint movement to the first waypoint in the trajectory file failed" << std::endl;
   }
 
-  // 接口调用: 清除缓存"rec"
+  // API call: Clear buffer "rec"
   robot_interface->getMotionControl()->pathBufferFree("rec");
 
-  // 接口调用: 新建一个缓存"rec"，并指定轨迹运动类型和轨迹点数量
+  // API call: Create a new buffer "rec", and specify the trajectory motion type and number of trajectory points
   robot_interface->getMotionControl()->pathBufferAlloc("rec", 3, traj_sz);
 
-  // 将轨迹文件中的路点分组添加到路径缓存中，
-  // 以10个点为1组，
-  // 如果未添加的路点数量小于或者等于10时，则作为最后一组来添加
+  // Add waypoints from the trajectory file to the path buffer in groups,
+  // 10 points per group,
+  // If the number of remaining waypoints to be added is less than or equal to 10, add them as the last group
   size_t offset = 10;
   auto it = traj_q.begin();
   while (true) {
-    std::cout << "添加轨迹路点 " << offset << std::endl;
-    // 接口调用: 添加轨迹路点道缓存路径中
+    std::cout << "Add trajectory waypoint " << offset << std::endl;
+    // API call: Add trajectory waypoints to the buffer path
     robot_interface->getMotionControl()->pathBufferAppend(
         "rec", std::vector<std::vector<double>>{it, it + 10});
     it += 10;
     if (offset + 10 >= traj_sz) {
-      std::cout << "添加轨迹路点 " << traj_sz << std::endl;
-      // 接口调用: 添加轨迹路点道缓存路径中
+      std::cout << "Add trajectory waypoint " << traj_sz << std::endl;
+      // API call: Add trajectory waypoints to the buffer path
       robot_interface->getMotionControl()->pathBufferAppend(
           "rec", std::vector<std::vector<double>>{it, traj_q.end()});
       break;
@@ -340,34 +340,34 @@ int main(int argc, char **argv) {
     offset += 10;
   }
 
-  // 接口调用: 计算、优化等耗时操作，来对轨迹进行优化
+  // API call: Perform time-consuming operations such as calculation and optimization to optimize the trajectory
   robot_interface->getMotionControl()->pathBufferEval("rec", {3, 3, 3, 3, 3, 3},
                                                       {2, 2, 2, 2, 2, 2}, 0);
 
-  // 判断路径缓存是否有效
+  // Check whether the path buffer is valid
   if (isBufferValid(robot_interface) == -1) {
-    std::cerr << "路径缓存无效，无法进行轨迹运动" << std::endl;
+    std::cerr << "Path buffer is invalid, unable to perform trajectory motion" << std::endl;
   } else {
-    // 接口调用: 执行轨迹运动
+    // API call: Execute trajectory motion
     robot_interface->getMotionControl()->movePathBuffer("rec");
 
-    // 等待轨迹运动完成
+    // Wait for trajectory motion to complete
     ret = waitArrival(robot_interface);
     if (ret == -1) {
-      std::cerr << "轨迹运动失败" << std::endl;
+      std::cerr << "Trajectory motion failed" << std::endl;
     } else {
-      std::cout << "轨迹运动结束" << std::endl;
+      std::cout << "Trajectory motion finished" << std::endl;
     }
   }
 
-  // 接口调用: 停止规划器运行
+  // API call: Stop the planner
   rpc_cli->getRuntimeMachine()->stop();
-  // 接口调用: 删除线程
+  // API call: Delete thread
   rpc_cli->getRuntimeMachine()->deleteTask(task_id);
 
-  // 接口调用: RPC 退出登录
+  // API call: RPC logout
   rpc_cli->logout();
-  // 接口调用: RPC 断开连接
+  // API call: RPC disconnect
   rpc_cli->disconnect();
 
   return 0;
